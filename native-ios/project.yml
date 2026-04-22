@@ -1,0 +1,39 @@
+name: ARakugaki
+options:
+  bundleIdPrefix: com.arakugaki
+  defaultConfig: Debug
+configs:
+  Debug: debug
+  Release: release
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 10.22.0
+  GoogleMaps:
+    url: https://github.com/googlemaps/ios-maps-sdk
+    from: 8.4.0
+targets:
+  ARakugaki:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources: [ARakugaki]
+    configFiles:
+      Debug: Config.xcconfig
+      Release: Config.xcconfig
+    dependencies:
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: Firebase
+        product: FirebaseStorage
+      - package: GoogleMaps
+        product: GoogleMaps
+    info:
+      path: ARakugaki/Info.plist
+      properties:
+        UILaunchScreen:
+          UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false

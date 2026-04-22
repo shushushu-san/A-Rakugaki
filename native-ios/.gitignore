@@ -1,0 +1,18 @@
+# Xcode
+.DS_Store
+build/
+*.pbxproj
+*.xcworkspace/
+xcuserdata/
+*.xcconfig
+
+# SPM
+.build/
+Packages/
+Package.resolved
+
+# Config / Secrets
+GoogleService-Info.plist
+
+# XcodeGen
+ARakugaki.xcodeproj
