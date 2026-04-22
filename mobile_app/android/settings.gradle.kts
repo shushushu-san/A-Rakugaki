@@ -24,3 +24,10 @@ plugins {
 }
 
 include(":app")
+
+// Unity AR library — exported by the Unity member into android/unityLibrary
+val unityLibraryDir = file("unityLibrary")
+if (unityLibraryDir.exists()) {
+    include(":unityLibrary")
+    project(":unityLibrary").projectDir = unityLibraryDir
+}

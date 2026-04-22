@@ -1,0 +1,13 @@
+// Stub unityLibrary — replace with real Unity export when available
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    compileSdk 34
+    namespace 'com.unity3d.player'
+
+    defaultConfig {
+        minSdk 22
+    }
+}

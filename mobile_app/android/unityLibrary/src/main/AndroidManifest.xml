@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stub manifest — replaced when Unity exports unityLibrary -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.unity3d.player">
+</manifest>

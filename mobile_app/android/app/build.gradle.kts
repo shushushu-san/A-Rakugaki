@@ -1,8 +1,14 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val localProps = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
 android {
@@ -28,6 +34,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["MAPS_API_KEY"] = localProps.getProperty("MAPS_API_KEY", "")
+        // Unity AR supports arm64-v8a and armeabi-v7a only (no x86/x86_64)
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     buildTypes {
@@ -41,4 +52,13 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// Unity AR library dependency — activated once unityLibrary is exported
+dependencies {
+    // Stub unity-classes.jar — replaced with real Unity export when available
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    if (rootProject.file("unityLibrary").exists()) {
+        implementation(project(":unityLibrary"))
+    }
 }
