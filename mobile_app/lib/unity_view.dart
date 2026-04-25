@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// TODO: Unity AR 統合手順
+// ToDo: Unity AR 統合手順
 // 1. Unityメンバーが以下をエクスポートしたら flutter_unity_widget を追加する:
 //    Android: Build Settings → Export Project → mobile_app/android/unityLibrary/
 //    iOS:     Build → 出力された UnityFramework.framework を ios/Runner に追加
