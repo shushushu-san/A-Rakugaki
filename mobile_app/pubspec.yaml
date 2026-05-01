@@ -35,9 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
-  # TODO: Unity AR integration — add flutter_unity_widget once Unity member
-  # exports unityLibrary (android/unityLibrary) and UnityFramework (iOS).
-  # flutter_unity_widget: ^2022.2.1+2
+  flutter_unity_widget_2: ^6000.1.0+1
 
 dev_dependencies:
   flutter_test:
