@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../models/post.dart';
 import 'map_picker_screen.dart';
+import 'post_detail_screen.dart';
 
 // ---------------------------------------------------------------------------
 // SNS フィード画面
@@ -364,7 +365,15 @@ class _PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Padding(
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (_) => PostDetailScreen(post: post),
+          ),
+        ),
+        child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,6 +414,7 @@ class _PostCard extends StatelessWidget {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

@@ -32,10 +32,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  final List<Post> _posts = [];
+  List<Post> _posts = [];
 
   void _onPostAdded(Post post) {
-    setState(() => _posts.insert(0, post));
+    setState(() => _posts = [post, ..._posts]);
   }
 
   @override
