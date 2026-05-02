@@ -13,15 +13,16 @@ import 'map_picker_screen.dart';
 // SNS フィード画面
 // ---------------------------------------------------------------------------
 class SNSScreen extends StatefulWidget {
-  const SNSScreen({super.key});
+  final List<Post> posts;
+  final void Function(Post) onPostAdded;
+
+  const SNSScreen({super.key, required this.posts, required this.onPostAdded});
 
   @override
   State<SNSScreen> createState() => _SNSScreenState();
 }
 
 class _SNSScreenState extends State<SNSScreen> {
-  final List<Post> _posts = [];
-
   Future<void> _openPostSheet() async {
     final post = await showModalBottomSheet<Post>(
       context: context,
@@ -30,7 +31,7 @@ class _SNSScreenState extends State<SNSScreen> {
       builder: (_) => const _PostSheet(),
     );
     if (post != null) {
-      setState(() => _posts.insert(0, post));
+      widget.onPostAdded(post);
     }
   }
 
@@ -41,7 +42,7 @@ class _SNSScreenState extends State<SNSScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('SNS'),
       ),
-      body: _posts.isEmpty
+      body: widget.posts.isEmpty
           ? const Center(
               child: Text(
                 'まだ投稿がありません\n右下のボタンから投稿しましょう',
@@ -50,8 +51,8 @@ class _SNSScreenState extends State<SNSScreen> {
               ),
             )
           : ListView.builder(
-              itemCount: _posts.length,
-              itemBuilder: (_, i) => _PostCard(post: _posts[i]),
+              itemCount: widget.posts.length,
+              itemBuilder: (_, i) => _PostCard(post: widget.posts[i]),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openPostSheet,
@@ -149,12 +150,12 @@ class _PostSheetState extends State<_PostSheet> {
 
   Future<void> _pickFromMap() async {
     final initial = _parsedLatLng() ?? const LatLng(35.6812, 139.7671);
-    final result = await Navigator.of(context).push<LatLng>(
+    final result = await Navigator.of(context, rootNavigator: true).push<LatLng>(
       MaterialPageRoute(
         builder: (_) => MapPickerScreen(initialPosition: initial),
       ),
     );
-    if (result != null) _setCoords(result.latitude, result.longitude);
+    if (result != null && mounted) _setCoords(result.latitude, result.longitude);
   }
 
   void _setCoords(double lat, double lng) {

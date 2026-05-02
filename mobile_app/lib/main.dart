@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'models/post.dart';
 import 'screens/map_screen.dart';
 import 'screens/sns_screen.dart';
 
@@ -31,18 +32,21 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  final List<Post> _posts = [];
 
-  static const List<Widget> _screens = [
-    MapScreen(),
-    SNSScreen(),
-  ];
+  void _onPostAdded(Post post) {
+    setState(() => _posts.insert(0, post));
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: [
+          MapScreen(posts: _posts),
+          SNSScreen(posts: _posts, onPostAdded: _onPostAdded),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

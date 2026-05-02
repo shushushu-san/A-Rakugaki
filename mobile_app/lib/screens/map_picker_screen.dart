@@ -26,21 +26,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('場所を選択'),
-        actions: [
-          TextButton(
-            onPressed: _pickedLocation != null ? _confirm : null,
-            child: Text(
-              '決定',
-              style: TextStyle(
-                color: _pickedLocation != null ? Colors.white : Colors.white38,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
       ),
       body: Stack(
         children: [
@@ -61,6 +51,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             myLocationButtonEnabled: false,
             myLocationEnabled: false,
           ),
+
           // 操作ガイド
           Positioned(
             top: 12,
@@ -80,29 +71,61 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               ),
             ),
           ),
-          // 選択中座標の表示
+
+          // 座標表示 + 決定ボタン（ホームバーに被らないよう上にオフセット）
           if (_pickedLocation != null)
             Positioned(
-              bottom: 16,
+              bottom: bottomPadding + 72, // システムナビゲーションバー分 + 余白
               left: 16,
               right: 16,
-              child: Material(
-                elevation: 4,
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.deepPurple),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${_pickedLocation!.latitude.toStringAsFixed(6)}, '
-                        '${_pickedLocation!.longitude.toStringAsFixed(6)}',
-                        style: const TextStyle(fontSize: 13),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // 座標表示
+                  Expanded(
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_on, color: Colors.deepPurple),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${_pickedLocation!.latitude.toStringAsFixed(6)},\n'
+                                '${_pickedLocation!.longitude.toStringAsFixed(6)}',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  // 決定ボタン
+                  ElevatedButton.icon(
+                    onPressed: _confirm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.check),
+                    label: const Text('決定', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
             ),
         ],
