@@ -54,6 +54,12 @@ flutter {
     source = "../.."
 }
 
+repositories {
+    flatDir {
+        dirs("../unityLibrary/unityLibrary/libs")
+    }
+}
+
 // Unity AR library dependency — activated once unityLibrary is exported
 dependencies {
     // Stub unity-classes.jar — replaced with real Unity export when available

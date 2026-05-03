@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_unity_widget_2/flutter_unity_widget.dart';
+import 'package:flutter_unity_widget_2/flutter_unity_widget_2.dart';
 
 class UnityARView extends StatefulWidget {
   const UnityARView({super.key});

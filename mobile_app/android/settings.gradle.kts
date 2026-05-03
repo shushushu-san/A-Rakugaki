@@ -30,4 +30,7 @@ val unityLibraryDir = file("unityLibrary/unityLibrary")
 if (unityLibraryDir.exists()) {
     include(":unityLibrary")
     project(":unityLibrary").projectDir = unityLibraryDir
+
+    include(":unityLibrary:xrmanifest.androidlib")
+    project(":unityLibrary:xrmanifest.androidlib").projectDir = file("unityLibrary/unityLibrary/xrmanifest.androidlib")
 }
