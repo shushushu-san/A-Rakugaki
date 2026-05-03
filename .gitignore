@@ -1,1 +1,8 @@
 .DS_Store
+.vscode/
+
+# Unity ビルド成果物
+mobile_app/android/unityLibrary/unityLibrary/build/
+mobile_app/android/unityLibrary/unityLibrary/src/main/Il2CppOutputProject/Source/il2cppOutput/compile-data.json
+mobile_app/android/unityLibrary/unityLibrary/src/main/jniLibs/
+mobile_app/android/unityLibrary/unityLibrary/symbols/
