@@ -7,19 +7,40 @@
 
 
 
+extern void DrawingManager_Awake_mE226ED5E551C4EC2FB1B6C9C659DC2F8E639DFCB (void);
+extern void DrawingManager_Update_m23D72703B48FFB05D94ED66E015E98DF90B25382 (void);
+extern void DrawingManager_StartNewLine_m6A5FFF6ECE9B86D55ED1E9E0CA0B1480EE5E87CC (void);
+extern void DrawingManager_SetColor_mF15ACE707B8C2B75727E28CA5ACFF50708B1400E (void);
+extern void DrawingManager_SetWidth_mAEA80DD0ACC49E0D8ED7B4718723C26FCC39D58D (void);
+extern void DrawingManager_ClearAll_m9A5925B6540E835410B52FEE6D2FB9099348CC06 (void);
+extern void DrawingManager__ctor_m72932B03422830A819B9B7CEE73FA81A7D62DFA6 (void);
 extern void Readme__ctor_m69C325C4C171DCB0312B646A9034AA91EA8C39C6 (void);
 extern void Section__ctor_m5F732533E4DFC0167D965E5F5DB332E46055399B (void);
 extern void UnitySourceGeneratedAssemblyMonoScriptTypes_v1_Get_mBEB95BEB954BB63E9710BBC7AD5E78C4CB0A0033 (void);
 extern void UnitySourceGeneratedAssemblyMonoScriptTypes_v1__ctor_mE70FB23ACC1EA12ABC948AA22C2E78B2D0AA39B1 (void);
-static Il2CppMethodPointer s_methodPointers[4] = 
+static Il2CppMethodPointer s_methodPointers[11] = 
 {
+	DrawingManager_Awake_mE226ED5E551C4EC2FB1B6C9C659DC2F8E639DFCB,
+	DrawingManager_Update_m23D72703B48FFB05D94ED66E015E98DF90B25382,
+	DrawingManager_StartNewLine_m6A5FFF6ECE9B86D55ED1E9E0CA0B1480EE5E87CC,
+	DrawingManager_SetColor_mF15ACE707B8C2B75727E28CA5ACFF50708B1400E,
+	DrawingManager_SetWidth_mAEA80DD0ACC49E0D8ED7B4718723C26FCC39D58D,
+	DrawingManager_ClearAll_m9A5925B6540E835410B52FEE6D2FB9099348CC06,
+	DrawingManager__ctor_m72932B03422830A819B9B7CEE73FA81A7D62DFA6,
 	Readme__ctor_m69C325C4C171DCB0312B646A9034AA91EA8C39C6,
 	Section__ctor_m5F732533E4DFC0167D965E5F5DB332E46055399B,
 	UnitySourceGeneratedAssemblyMonoScriptTypes_v1_Get_mBEB95BEB954BB63E9710BBC7AD5E78C4CB0A0033,
 	UnitySourceGeneratedAssemblyMonoScriptTypes_v1__ctor_mE70FB23ACC1EA12ABC948AA22C2E78B2D0AA39B1,
 };
-static const int32_t s_InvokerIndices[4] = 
+static const int32_t s_InvokerIndices[11] = 
 {
+	17637,
+	17637,
+	17637,
+	13417,
+	13417,
+	13417,
+	17637,
 	17637,
 	17637,
 	30289,
@@ -29,7 +50,7 @@ IL2CPP_EXTERN_C const Il2CppCodeGenModule g_AssemblyU2DCSharp_CodeGenModule;
 const Il2CppCodeGenModule g_AssemblyU2DCSharp_CodeGenModule = 
 {
 	"Assembly-CSharp.dll",
-	4,
+	11,
 	s_methodPointers,
 	0,
 	NULL,
