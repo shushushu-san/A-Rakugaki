@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -17,16 +19,16 @@ import 'post_detail_screen.dart';
 // ---------------------------------------------------------------------------
 class SNSScreen extends StatefulWidget {
   final List<Post> posts;
-  final void Function(Post) onPostAdded;
   final void Function(String postId, String emoji) onReactionToggled;
   final Map<String, Set<String>> myReactions;
+  final String userId;
 
   const SNSScreen({
     super.key,
     required this.posts,
-    required this.onPostAdded,
     required this.onReactionToggled,
     required this.myReactions,
+    required this.userId,
   });
 
   @override
@@ -35,15 +37,12 @@ class SNSScreen extends StatefulWidget {
 
 class _SNSScreenState extends State<SNSScreen> {
   Future<void> _openPostSheet() async {
-    final post = await showModalBottomSheet<Post>(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => const _PostSheet(),
+      builder: (_) => _PostSheet(userId: widget.userId),
     );
-    if (post != null) {
-      widget.onPostAdded(post);
-    }
   }
 
   @override
@@ -83,7 +82,8 @@ class _SNSScreenState extends State<SNSScreen> {
 // 投稿作成ボトムシート
 // ---------------------------------------------------------------------------
 class _PostSheet extends StatefulWidget {
-  const _PostSheet();
+  final String userId;
+  const _PostSheet({required this.userId});
 
   @override
   State<_PostSheet> createState() => _PostSheetState();
@@ -97,6 +97,7 @@ class _PostSheetState extends State<_PostSheet> {
 
   File? _image;
   bool _fetchingLocation = false;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -191,7 +192,7 @@ class _PostSheetState extends State<_PostSheet> {
   }
 
   // ---- 投稿 ----
-  void _submit() {
+  Future<void> _submit() async {
     final title   = _titleController.text.trim();
     final comment = _commentController.text.trim();
     final location = _parsedLatLng();
@@ -215,16 +216,38 @@ class _PostSheetState extends State<_PostSheet> {
       return;
     }
 
-    Navigator.of(context).pop(
-      Post(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: title,
-        comment: comment,
-        image: _image,
-        location: location,
-        createdAt: DateTime.now(),
-      ),
-    );
+    setState(() => _submitting = true);
+    try {
+      String? imageUrl;
+      if (_image != null) {
+        final ref = FirebaseStorage.instance
+            .ref()
+            .child('posts/${DateTime.now().millisecondsSinceEpoch}.jpg');
+        await ref.putFile(_image!);
+        imageUrl = await ref.getDownloadURL();
+      }
+
+      await FirebaseFirestore.instance.collection('posts').add({
+        'title': title,
+        'comment': comment,
+        'imageUrl': imageUrl,
+        'lat': location.latitude,
+        'lng': location.longitude,
+        'createdAt': FieldValue.serverTimestamp(),
+        'userId': widget.userId,
+        'reactions': <String, int>{},
+      });
+
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('投稿に失敗しました: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -376,8 +399,14 @@ class _PostSheetState extends State<_PostSheet> {
 
             // 投稿ボタン
             FilledButton.icon(
-              onPressed: _submit,
-              icon: const Icon(Icons.send),
+              onPressed: _submitting ? null : _submit,
+              icon: _submitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send),
               label: const Text('投稿する'),
             ),
           ],
@@ -425,11 +454,11 @@ class _PostCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 画像（AR置き換え予定エリア）
-            if (post.image != null) ...[
+            if (post.imageUrl != null) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  post.image!,
+                child: Image.network(
+                  post.imageUrl!,
                   width: double.infinity,
                   height: 180,
                   fit: BoxFit.cover,

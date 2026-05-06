@@ -60,11 +60,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.post.image != null) ...[
+            if (widget.post.imageUrl != null) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  widget.post.image!,
+                child: Image.network(
+                  widget.post.imageUrl!,
                   width: double.infinity,
                   fit: BoxFit.contain,
                 ),
