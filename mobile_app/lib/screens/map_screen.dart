@@ -10,8 +10,15 @@ import 'post_detail_screen.dart';
 
 class MapScreen extends StatefulWidget {
   final List<Post> posts;
+  final void Function(String postId, String emoji) onReactionToggled;
+  final Map<String, Set<String>> myReactions;
 
-  const MapScreen({super.key, required this.posts});
+  const MapScreen({
+    super.key,
+    required this.posts,
+    required this.onReactionToggled,
+    required this.myReactions,
+  });
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -176,10 +183,21 @@ class _MapScreenState extends State<MapScreen> {
   // ---- 全画面詳細表示 ----
 
   void _showPostDetail(Post post) {
+    // クロージャがキャプチャした post は古い可能性があるため、
+    // 常に widget.posts から最新オブジェクトを取得する
+    final current = widget.posts.firstWhere(
+      (p) => p.id == post.id,
+      orElse: () => post,
+    );
     Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => PostDetailScreen(post: post),
+        builder: (_) => PostDetailScreen(
+          post: current,
+          onReactionToggled: (emoji) =>
+              widget.onReactionToggled(current.id, emoji),
+          myReactions: widget.myReactions[current.id] ?? const {},
+        ),
       ),
     );
   }

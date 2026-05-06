@@ -9,6 +9,7 @@ class Post {
   final File? image; // 将来的にARコンテンツへ置き換え予定
   final LatLng location;
   final DateTime createdAt;
+  final Map<String, int> reactions;
 
   Post({
     required this.id,
@@ -17,5 +18,18 @@ class Post {
     this.image,
     required this.location,
     required this.createdAt,
-  });
+    Map<String, int>? reactions,
+  }) : reactions = reactions ?? {};
+
+  Post copyWith({Map<String, int>? reactions}) {
+    return Post(
+      id: id,
+      title: title,
+      comment: comment,
+      image: image,
+      location: location,
+      createdAt: createdAt,
+      reactions: reactions ?? Map<String, int>.from(this.reactions),
+    );
+  }
 }

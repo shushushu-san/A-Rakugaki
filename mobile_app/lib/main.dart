@@ -91,6 +91,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   List<Post> _posts = [];
+  final Map<String, Set<String>> _myReactions = {};
 
   @override
   void initState() {
@@ -102,14 +103,46 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _posts = [post, ..._posts]);
   }
 
+  void _onReactionToggled(String postId, String emoji) {
+    setState(() {
+      final idx = _posts.indexWhere((p) => p.id == postId);
+      if (idx == -1) return;
+      final myPostReactions = _myReactions.putIfAbsent(postId, () => {});
+      final post = _posts[idx];
+      final newReactions = Map<String, int>.from(post.reactions);
+      if (myPostReactions.contains(emoji)) {
+        myPostReactions.remove(emoji);
+        final count = (newReactions[emoji] ?? 1) - 1;
+        if (count <= 0) {
+          newReactions.remove(emoji);
+        } else {
+          newReactions[emoji] = count;
+        }
+      } else {
+        myPostReactions.add(emoji);
+        newReactions[emoji] = (newReactions[emoji] ?? 0) + 1;
+      }
+      _posts[idx] = post.copyWith(reactions: newReactions);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          MapScreen(posts: _posts),
-          SNSScreen(posts: _posts, onPostAdded: _onPostAdded),
+          MapScreen(
+            posts: _posts,
+            onReactionToggled: _onReactionToggled,
+            myReactions: _myReactions,
+          ),
+          SNSScreen(
+            posts: _posts,
+            onPostAdded: _onPostAdded,
+            onReactionToggled: _onReactionToggled,
+            myReactions: _myReactions,
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

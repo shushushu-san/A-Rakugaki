@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../models/post.dart';
 import '../theme/app_colors.dart';
+import '../widgets/reactions_bar.dart';
 import 'map_picker_screen.dart';
 import 'post_detail_screen.dart';
 
@@ -17,8 +18,16 @@ import 'post_detail_screen.dart';
 class SNSScreen extends StatefulWidget {
   final List<Post> posts;
   final void Function(Post) onPostAdded;
+  final void Function(String postId, String emoji) onReactionToggled;
+  final Map<String, Set<String>> myReactions;
 
-  const SNSScreen({super.key, required this.posts, required this.onPostAdded});
+  const SNSScreen({
+    super.key,
+    required this.posts,
+    required this.onPostAdded,
+    required this.onReactionToggled,
+    required this.myReactions,
+  });
 
   @override
   State<SNSScreen> createState() => _SNSScreenState();
@@ -53,7 +62,13 @@ class _SNSScreenState extends State<SNSScreen> {
             )
           : ListView.builder(
               itemCount: widget.posts.length,
-              itemBuilder: (_, i) => _PostCard(post: widget.posts[i]),
+              itemBuilder: (_, i) => _PostCard(
+                post: widget.posts[i],
+                onReactionToggled: (emoji) =>
+                    widget.onReactionToggled(widget.posts[i].id, emoji),
+                myReactions:
+                    widget.myReactions[widget.posts[i].id] ?? const {},
+              ),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openPostSheet,
@@ -379,8 +394,14 @@ enum _LocationChoice { current, map }
 // ---------------------------------------------------------------------------
 class _PostCard extends StatelessWidget {
   final Post post;
+  final void Function(String emoji) onReactionToggled;
+  final Set<String> myReactions;
 
-  const _PostCard({required this.post});
+  const _PostCard({
+    required this.post,
+    required this.onReactionToggled,
+    required this.myReactions,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -391,7 +412,11 @@ class _PostCard extends StatelessWidget {
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
             fullscreenDialog: true,
-            builder: (_) => PostDetailScreen(post: post),
+            builder: (_) => PostDetailScreen(
+              post: post,
+              onReactionToggled: onReactionToggled,
+              myReactions: myReactions,
+            ),
           ),
         ),
         child: Padding(
@@ -440,6 +465,13 @@ class _PostCard extends StatelessWidget {
                   style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            // リアクション行
+            ReactionsBar(
+              reactions: post.reactions,
+              myReactions: myReactions,
+              onToggle: onReactionToggled,
             ),
           ],
         ),
