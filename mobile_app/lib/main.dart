@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'models/post.dart';
+import 'theme/app_colors.dart';
 import 'screens/map_screen.dart';
 import 'screens/sns_screen.dart';
 
@@ -16,7 +17,60 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'A-Rakugaki',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        brightness: Brightness.dark,
+        colorScheme: const ColorScheme.dark(
+          primary: AppColors.primary,
+          onPrimary: AppColors.onPrimary,
+          secondary: AppColors.primary,
+          onSecondary: AppColors.onPrimary,
+          surface: AppColors.surface,
+          onSurface: AppColors.textPrimary,
+        ),
+        scaffoldBackgroundColor: AppColors.background,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.surface,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: AppColors.surface,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.textSecondary,
+        ),
+        cardTheme: const CardThemeData(
+          color: AppColors.card,
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.onPrimary,
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.textMuted,
+            side: const BorderSide(color: AppColors.textSecondary),
+          ),
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          border: OutlineInputBorder(),
+          labelStyle: TextStyle(color: AppColors.textSecondary),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: AppColors.textSecondary),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: AppColors.primary, width: 2),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.primary,
+          ),
+        ),
       ),
       home: const HomeScreen(),
     );

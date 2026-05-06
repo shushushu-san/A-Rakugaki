@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'theme/app_colors.dart';
 
 // ToDo: Unity AR 統合手順
 // 1. Unityメンバーが以下をエクスポートしたら flutter_unity_widget を追加する:
@@ -25,17 +26,17 @@ class UnityARView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ColoredBox(
-      color: Colors.black,
+      color: AppColors.backgroundPure,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.view_in_ar, color: Colors.white54, size: 64),
+            Icon(Icons.view_in_ar, color: AppColors.textDisabled, size: 64),
             SizedBox(height: 12),
             Text(
               'Unity AR\n(統合準備中)',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54),
+              style: TextStyle(color: AppColors.textDisabled),
             ),
           ],
         ),

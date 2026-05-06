@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// マップをタップして座標を選択する画面
@@ -61,12 +62,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.black54,
+                  color: AppColors.overlayDark,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
-                  'タップして場所を選択',
-                  style: TextStyle(color: Colors.white, fontSize: 13),
+                  'タップして場所を選拡',
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 13),
                 ),
               ),
             ),
@@ -93,7 +94,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.location_on, color: Colors.deepPurple),
+                            const Icon(Icons.location_on, color: AppColors.primary),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -112,8 +113,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   ElevatedButton.icon(
                     onPressed: _confirm,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 14,

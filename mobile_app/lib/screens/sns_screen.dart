@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/post.dart';
+import '../theme/app_colors.dart';
 import 'map_picker_screen.dart';
 import 'post_detail_screen.dart';
 
@@ -40,7 +41,6 @@ class _SNSScreenState extends State<SNSScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('SNS'),
       ),
       body: widget.posts.isEmpty
@@ -48,7 +48,7 @@ class _SNSScreenState extends State<SNSScreen> {
               child: Text(
                 'まだ投稿がありません\n右下のボタンから投稿しましょう',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppColors.textSecondary),
               ),
             )
           : ListView.builder(
@@ -268,10 +268,10 @@ class _PostSheetState extends State<_PostSheet> {
                           onTap: () => setState(() => _image = null),
                           child: Container(
                             decoration: const BoxDecoration(
-                              color: Colors.black54,
+                              color: AppColors.overlayDark,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.close, size: 16, color: Colors.white),
+                            child: const Icon(Icons.close, size: 16, color: AppColors.textPrimary),
                           ),
                         ),
                       ),
@@ -399,17 +399,17 @@ class _PostCard extends StatelessWidget {
             // フッター（座標・日時）
             Row(
               children: [
-                const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                const Icon(Icons.location_on, size: 14, color: AppColors.textSecondary),
                 const SizedBox(width: 2),
                 Text(
                   '${post.location.latitude.toStringAsFixed(5)}, '
                   '${post.location.longitude.toStringAsFixed(5)}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
                 const Spacer(),
                 Text(
                   _formatDate(post.createdAt),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
             ),

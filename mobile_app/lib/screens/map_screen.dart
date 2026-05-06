@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/post.dart';
+import '../theme/app_colors.dart';
 import 'post_detail_screen.dart';
 
 class MapScreen extends StatefulWidget {
@@ -111,7 +112,7 @@ class _MapScreenState extends State<MapScreen> {
         text: label,
         style: const TextStyle(
           fontSize: fontSize,
-          color: Colors.black87,
+          color: AppColors.bubbleInk,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -148,16 +149,16 @@ class _MapScreenState extends State<MapScreen> {
     canvas.drawPath(
       path,
       Paint()
-        ..color = Colors.black26
+        ..color = AppColors.bubbleShadow
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
     // 塗りつぶし
-    canvas.drawPath(path, Paint()..color = Colors.white);
+    canvas.drawPath(path, Paint()..color = AppColors.bubbleFill);
     // 枠線
     canvas.drawPath(
       path,
       Paint()
-        ..color = Colors.black87
+        ..color = AppColors.bubbleInk
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
@@ -187,7 +188,6 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('A-Rakugaki'),
       ),
       body: Stack(
@@ -208,15 +208,18 @@ class _MapScreenState extends State<MapScreen> {
               child: Material(
                 elevation: 4,
                 borderRadius: BorderRadius.circular(8),
-                color: Colors.red.shade100,
+                color: AppColors.errorBanner,
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
-                      const Icon(Icons.location_off, color: Colors.red),
+                      const Icon(Icons.location_off, color: AppColors.errorIcon),
                       const SizedBox(width: 8),
                       const Expanded(
-                        child: Text('位置情報の権限が必要です。設定から許可してください。'),
+                        child: Text(
+                          '位置情報の権限が必要です。設定から許可してください。',
+                          style: TextStyle(color: AppColors.textPrimary),
+                        ),
                       ),
                       TextButton(
                         onPressed: Geolocator.openAppSettings,

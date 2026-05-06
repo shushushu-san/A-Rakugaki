@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/post.dart';
+import '../theme/app_colors.dart';
 
 class PostDetailScreen extends StatelessWidget {
   final Post post;
@@ -11,7 +12,6 @@ class PostDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('投稿詳細'),
       ),
       body: SingleChildScrollView(
@@ -34,19 +34,19 @@ class PostDetailScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                const Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
                   '${post.location.latitude.toStringAsFixed(5)}, '
                   '${post.location.longitude.toStringAsFixed(5)}',
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
               ],
             ),
             const SizedBox(height: 4),
             Text(
               _formatDate(post.createdAt),
-              style: const TextStyle(fontSize: 13, color: Colors.grey),
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
           ],
         ),
