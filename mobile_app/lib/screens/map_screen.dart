@@ -81,7 +81,7 @@ class _MapScreenState extends State<MapScreen> {
     final newMarkers = <Marker>{};
 
     for (final post in posts) {
-      final icon = await _createSpeechBubbleIcon(post.comment);
+      final icon = await _createSpeechBubbleIcon(post.title);
       if (!mounted) return;
       newMarkers.add(
         Marker(
@@ -96,9 +96,9 @@ class _MapScreenState extends State<MapScreen> {
     if (mounted) setState(() => _markers = newMarkers);
   }
 
-  Future<BitmapDescriptor> _createSpeechBubbleIcon(String comment) async {
+  Future<BitmapDescriptor> _createSpeechBubbleIcon(String title) async {
     final String label =
-        comment.length > 10 ? '${comment.substring(0, 10)}…' : comment;
+        title.length > 10 ? '${title.substring(0, 10)}…' : title;
 
     const double bubbleWidth = 150;
     const double radius = 10.0;

@@ -41,7 +41,7 @@ class _SNSScreenState extends State<SNSScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SNS'),
+        title: const Text('Timeline'),
       ),
       body: widget.posts.isEmpty
           ? const Center(
@@ -75,15 +75,17 @@ class _PostSheet extends StatefulWidget {
 }
 
 class _PostSheetState extends State<_PostSheet> {
+  final _titleController   = TextEditingController();
   final _commentController = TextEditingController();
-  final _latController = TextEditingController();
-  final _lngController = TextEditingController();
+  final _latController     = TextEditingController();
+  final _lngController     = TextEditingController();
 
   File? _image;
   bool _fetchingLocation = false;
 
   @override
   void dispose() {
+    _titleController.dispose();
     _commentController.dispose();
     _latController.dispose();
     _lngController.dispose();
@@ -175,9 +177,16 @@ class _PostSheetState extends State<_PostSheet> {
 
   // ---- 投稿 ----
   void _submit() {
+    final title   = _titleController.text.trim();
     final comment = _commentController.text.trim();
     final location = _parsedLatLng();
 
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('タイトルを入力してください')),
+      );
+      return;
+    }
     if (comment.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('コメントを入力してください')),
@@ -194,6 +203,7 @@ class _PostSheetState extends State<_PostSheet> {
     Navigator.of(context).pop(
       Post(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: title,
         comment: comment,
         image: _image,
         location: location,
@@ -229,12 +239,23 @@ class _PostSheetState extends State<_PostSheet> {
             ),
             const SizedBox(height: 12),
 
+            // タイトル入力
+            TextField(
+              controller: _titleController,
+              maxLines: 1,
+              decoration: const InputDecoration(
+                labelText: 'タイトル *',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+
             // コメント入力
             TextField(
               controller: _commentController,
               maxLines: 3,
               decoration: const InputDecoration(
-                labelText: 'コメント',
+                labelText: 'コメント *',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -391,6 +412,13 @@ class _PostCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
             ],
+
+            // タイトル
+            Text(
+              post.title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
 
             // コメント
             Text(post.comment, style: const TextStyle(fontSize: 15)),

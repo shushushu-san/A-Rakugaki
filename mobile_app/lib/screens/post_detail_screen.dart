@@ -12,7 +12,7 @@ class PostDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('投稿詳細'),
+        title: Text(post.title),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
