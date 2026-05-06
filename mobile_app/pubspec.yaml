@@ -48,11 +48,26 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.6
 
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/app_icon.jpg"
+  # Android 8以降: アダプティブアイコン設定（白枠防止）
+  adaptive_icon_background: "#121212"
+  adaptive_icon_foreground: "assets/icon/app_icon.jpg"
+
+flutter_native_splash:
+  color: "#121212"
+  image: assets/icon/app_icon.jpg
+  android: true
+  ios: true
+  # Android 12以降: アイコン背景の白円をアプリ背景色と同じ色に上書き
+  android_12:
+    color: "#121212"
+    icon_background_color: "#121212"
+    image: assets/icon/app_icon.jpg
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
