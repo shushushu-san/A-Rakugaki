@@ -457,6 +457,9 @@ struct Readme_tE17B99201D0F52BD5727638AD3F41072A65B3BBB  : public ScriptableObje
 struct Renderer_t320575F223BCB177A982E5DDB5DB19FAA89E7FBF  : public Component_t39FBE53E5EFCF4409111FB22C15FF73717632EC3
 {
 };
+struct Transform_tB27202C6F4E36D225EE28A13E4D662BF99785DB1  : public Component_t39FBE53E5EFCF4409111FB22C15FF73717632EC3
+{
+};
 struct GlobalState_tFDD5D3FE93083EE02E4E8987E61A5D7D5F5CE61A 
 {
 	InlinedArray_1_t1BB3E1C727E53B8F4342843F1042AFE85C5A70C3 ___touchscreens;
@@ -790,6 +793,9 @@ inline Vector3U5BU5D_tFF1859CCE176131B909E2044F76443064254679C* List_1_ToArray_m
 }
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void LineRenderer_SetPositions_m7F7B7B54428437D0BF5256D4C82F92180B577B02 (LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* __this, Vector3U5BU5D_tFF1859CCE176131B909E2044F76443064254679C* ___0_positions, const RuntimeMethod* method) ;
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void GameObject__ctor_m37D512B05D292F954792225E6C6EEE95293A9B88 (GameObject_t76FEDD663AB33C991A9C9A23129337651094216F* __this, String_t* ___0_name, const RuntimeMethod* method) ;
+IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR Transform_tB27202C6F4E36D225EE28A13E4D662BF99785DB1* GameObject_get_transform_m0BC10ADFA1632166AE5544BDF9038A2650C2AE56 (GameObject_t76FEDD663AB33C991A9C9A23129337651094216F* __this, const RuntimeMethod* method) ;
+IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR Transform_tB27202C6F4E36D225EE28A13E4D662BF99785DB1* Component_get_transform_m2919A1D81931E6932C7F06D4C2F0AB8DDA9A5371 (Component_t39FBE53E5EFCF4409111FB22C15FF73717632EC3* __this, const RuntimeMethod* method) ;
+IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Transform_SetParent_m6677538B60246D958DD91F931C50F969CCBB5250 (Transform_tB27202C6F4E36D225EE28A13E4D662BF99785DB1* __this, Transform_tB27202C6F4E36D225EE28A13E4D662BF99785DB1* ___0_p, const RuntimeMethod* method) ;
 inline LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* GameObject_AddComponent_TisLineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D_mF8C0D953BCBFDD5A01A09ADB67EB04F0D677A056 (GameObject_t76FEDD663AB33C991A9C9A23129337651094216F* __this, const RuntimeMethod* method)
 {
 	return ((  LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* (*) (GameObject_t76FEDD663AB33C991A9C9A23129337651094216F*, const RuntimeMethod*))GameObject_AddComponent_TisRuntimeObject_m69B93700FACCF372F5753371C6E8FB780800B824_gshared)(__this, method);
@@ -962,10 +968,10 @@ IL_004a:
 		List_1_t0754071572EFE7A5C92A59495D2524FC935364E3* L_9 = __this->____hits;
 		NullCheck(L_7);
 		bool L_10;
-		L_10 = ARRaycastManager_Raycast_mF56A1E2D7CBB61131E4D844ADA9D0CC1F6B53EAC(L_7, L_8, L_9, 1, NULL);
+		L_10 = ARRaycastManager_Raycast_mF56A1E2D7CBB61131E4D844ADA9D0CC1F6B53EAC(L_7, L_8, L_9, ((int32_t)11), NULL);
 		if (!L_10)
 		{
-			goto IL_00e4;
+			goto IL_00e5;
 		}
 	}
 	{
@@ -986,7 +992,7 @@ IL_004a:
 		L_16 = List_1_get_Count_m46EEFFA770BE665EA0CB3A5332E941DA4B3C1D37_inline(L_15, List_1_get_Count_m46EEFFA770BE665EA0CB3A5332E941DA4B3C1D37_RuntimeMethod_var);
 		if (!L_16)
 		{
-			goto IL_00ac;
+			goto IL_00ad;
 		}
 	}
 	{
@@ -1003,11 +1009,11 @@ IL_004a:
 		L_22 = Vector3_Distance_m2314DB9B8BD01157E013DF87BEA557375C7F9FF9_inline(L_20, L_21, NULL);
 		if ((!(((float)L_22) > ((float)(0.00100000005f)))))
 		{
-			goto IL_00e4;
+			goto IL_00e5;
 		}
 	}
 
-IL_00ac:
+IL_00ad:
 	{
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:51>
 		List_1_t77B94703E05C519A9010DD0614F757F974E1CD8B* L_23 = __this->____activePoints;
@@ -1032,7 +1038,7 @@ IL_00ac:
 		LineRenderer_SetPositions_m7F7B7B54428437D0BF5256D4C82F92180B577B02(L_28, L_30, NULL);
 	}
 
-IL_00e4:
+IL_00e5:
 	{
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:56>
 		return;
@@ -1059,48 +1065,57 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void DrawingManager_StartNewLine_m6A5FFF6ECE9
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:61>
 		GameObject_t76FEDD663AB33C991A9C9A23129337651094216F* L_1 = V_0;
 		NullCheck(L_1);
-		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_2;
-		L_2 = GameObject_AddComponent_TisLineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D_mF8C0D953BCBFDD5A01A09ADB67EB04F0D677A056(L_1, GameObject_AddComponent_TisLineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D_mF8C0D953BCBFDD5A01A09ADB67EB04F0D677A056_RuntimeMethod_var);
-		__this->____activeLine = L_2;
-		Il2CppCodeGenWriteBarrier((void**)(&__this->____activeLine), (void*)L_2);
+		Transform_tB27202C6F4E36D225EE28A13E4D662BF99785DB1* L_2;
+		L_2 = GameObject_get_transform_m0BC10ADFA1632166AE5544BDF9038A2650C2AE56(L_1, NULL);
+		Transform_tB27202C6F4E36D225EE28A13E4D662BF99785DB1* L_3;
+		L_3 = Component_get_transform_m2919A1D81931E6932C7F06D4C2F0AB8DDA9A5371(__this, NULL);
+		NullCheck(L_2);
+		Transform_SetParent_m6677538B60246D958DD91F931C50F969CCBB5250(L_2, L_3, NULL);
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:62>
-		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_3 = __this->____activeLine;
-		Material_t18053F08F347D0DCA5E1140EC7EC4533DD8A14E3* L_4 = __this->___lineMaterial;
-		NullCheck(L_3);
-		Renderer_set_material_m21E88977071E0A914D62F3D9CFF0193B3117C45A(L_3, L_4, NULL);
+		GameObject_t76FEDD663AB33C991A9C9A23129337651094216F* L_4 = V_0;
+		NullCheck(L_4);
+		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_5;
+		L_5 = GameObject_AddComponent_TisLineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D_mF8C0D953BCBFDD5A01A09ADB67EB04F0D677A056(L_4, GameObject_AddComponent_TisLineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D_mF8C0D953BCBFDD5A01A09ADB67EB04F0D677A056_RuntimeMethod_var);
+		__this->____activeLine = L_5;
+		Il2CppCodeGenWriteBarrier((void**)(&__this->____activeLine), (void*)L_5);
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:63>
-		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_5 = __this->____activeLine;
-		Color_tD001788D726C3A7F1379BEED0260B9591F440C1F L_6 = __this->____currentColor;
-		NullCheck(L_5);
-		LineRenderer_set_startColor_mF72FAB20C09372FC8F2CBFCBD837FA02A87FBA91(L_5, L_6, NULL);
+		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_6 = __this->____activeLine;
+		Material_t18053F08F347D0DCA5E1140EC7EC4533DD8A14E3* L_7 = __this->___lineMaterial;
+		NullCheck(L_6);
+		Renderer_set_material_m21E88977071E0A914D62F3D9CFF0193B3117C45A(L_6, L_7, NULL);
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:64>
-		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_7 = __this->____activeLine;
-		Color_tD001788D726C3A7F1379BEED0260B9591F440C1F L_8 = __this->____currentColor;
-		NullCheck(L_7);
-		LineRenderer_set_endColor_m6AF26E0174434828BC6EF1BAC1FE188084819D9D(L_7, L_8, NULL);
+		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_8 = __this->____activeLine;
+		Color_tD001788D726C3A7F1379BEED0260B9591F440C1F L_9 = __this->____currentColor;
+		NullCheck(L_8);
+		LineRenderer_set_startColor_mF72FAB20C09372FC8F2CBFCBD837FA02A87FBA91(L_8, L_9, NULL);
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:65>
-		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_9 = __this->____activeLine;
-		float L_10 = __this->____currentWidth;
-		NullCheck(L_9);
-		LineRenderer_set_startWidth_m3899722E198D636DB216CB61C980214707069F4A(L_9, L_10, NULL);
+		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_10 = __this->____activeLine;
+		Color_tD001788D726C3A7F1379BEED0260B9591F440C1F L_11 = __this->____currentColor;
+		NullCheck(L_10);
+		LineRenderer_set_endColor_m6AF26E0174434828BC6EF1BAC1FE188084819D9D(L_10, L_11, NULL);
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:66>
-		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_11 = __this->____activeLine;
-		float L_12 = __this->____currentWidth;
-		NullCheck(L_11);
-		LineRenderer_set_endWidth_mC7260401655C8BE1CBDFB832009295C89613F81D(L_11, L_12, NULL);
+		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_12 = __this->____activeLine;
+		float L_13 = __this->____currentWidth;
+		NullCheck(L_12);
+		LineRenderer_set_startWidth_m3899722E198D636DB216CB61C980214707069F4A(L_12, L_13, NULL);
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:67>
-		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_13 = __this->____activeLine;
-		NullCheck(L_13);
-		LineRenderer_set_positionCount_m2001FB4044053895ECBE897AB833284F3300B205(L_13, 0, NULL);
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:68>
 		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_14 = __this->____activeLine;
+		float L_15 = __this->____currentWidth;
 		NullCheck(L_14);
-		LineRenderer_set_useWorldSpace_m0204DB2541CC37DC4DC15DA15FD5A66EDC507CE8(L_14, (bool)1, NULL);
+		LineRenderer_set_endWidth_mC7260401655C8BE1CBDFB832009295C89613F81D(L_14, L_15, NULL);
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:68>
+		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_16 = __this->____activeLine;
+		NullCheck(L_16);
+		LineRenderer_set_positionCount_m2001FB4044053895ECBE897AB833284F3300B205(L_16, 0, NULL);
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:69>
-		List_1_t77B94703E05C519A9010DD0614F757F974E1CD8B* L_15 = __this->____activePoints;
-		NullCheck(L_15);
-		List_1_Clear_m455780C5A45049F9BDC25EAD3BA10A681D16385D_inline(L_15, List_1_Clear_m455780C5A45049F9BDC25EAD3BA10A681D16385D_RuntimeMethod_var);
+		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_17 = __this->____activeLine;
+		NullCheck(L_17);
+		LineRenderer_set_useWorldSpace_m0204DB2541CC37DC4DC15DA15FD5A66EDC507CE8(L_17, (bool)1, NULL);
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:70>
+		List_1_t77B94703E05C519A9010DD0614F757F974E1CD8B* L_18 = __this->____activePoints;
+		NullCheck(L_18);
+		List_1_Clear_m455780C5A45049F9BDC25EAD3BA10A681D16385D_inline(L_18, List_1_Clear_m455780C5A45049F9BDC25EAD3BA10A681D16385D_RuntimeMethod_var);
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:71>
 		return;
 	}
 }
@@ -1113,17 +1128,17 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void DrawingManager_SetColor_mF15ACE707B8C2B7
 	float V_3 = 0.0f;
 	float V_4 = 0.0f;
 	{
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:75>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:76>
 		String_t* L_0 = ___0_rgba;
 		NullCheck(L_0);
 		StringU5BU5D_t7674CD946EC0CE7B3AE0BE70E6EE85F2ECD9F248* L_1;
 		L_1 = String_Split_m9530B73D02054692283BF35C3A27C8F2230946F4(L_0, ((int32_t)44), 0, NULL);
 		V_0 = L_1;
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:76>
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:77>
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:78>
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:79>
 		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:80>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:81>
 		StringU5BU5D_t7674CD946EC0CE7B3AE0BE70E6EE85F2ECD9F248* L_2 = V_0;
 		NullCheck(L_2);
 		if ((!(((uint32_t)((int32_t)(((RuntimeArray*)L_2)->max_length))) == ((uint32_t)4))))
@@ -1180,7 +1195,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void DrawingManager_SetColor_mF15ACE707B8C2B7
 		}
 	}
 	{
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:82>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:83>
 		float L_19 = V_1;
 		float L_20 = V_2;
 		float L_21 = V_3;
@@ -1193,7 +1208,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void DrawingManager_SetColor_mF15ACE707B8C2B7
 
 IL_0050:
 	{
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:84>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:85>
 		return;
 	}
 }
@@ -1202,7 +1217,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void DrawingManager_SetWidth_mAEA80DD0ACC49E0
 {
 	float V_0 = 0.0f;
 	{
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:89>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:90>
 		String_t* L_0 = ___0_widthStr;
 		bool L_1;
 		L_1 = Single_TryParse_mC39FC2D8F1F33DE64685F3A8CE6BDD2164FB9423(L_0, (&V_0), NULL);
@@ -1212,14 +1227,14 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void DrawingManager_SetWidth_mAEA80DD0ACC49E0
 		}
 	}
 	{
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:90>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:91>
 		float L_2 = V_0;
 		__this->____currentWidth = L_2;
 	}
 
 IL_0011:
 	{
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:91>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:92>
 		return;
 	}
 }
@@ -1236,7 +1251,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void DrawingManager_ClearAll_m9A5925B6540E835
 	LineRendererU5BU5D_t5AA0E11EC99A18A11BCCCABDF088C854E50D394A* V_0 = NULL;
 	int32_t V_1 = 0;
 	{
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:96>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:97>
 		il2cpp_codegen_runtime_class_init_inline(Object_tC12DECB6760A7F2CBF65D9DCF18D044C2D97152C_il2cpp_TypeInfo_var);
 		LineRendererU5BU5D_t5AA0E11EC99A18A11BCCCABDF088C854E50D394A* L_0;
 		L_0 = Object_FindObjectsByType_TisLineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D_mDBCB88C5BA8C23BA9EC252A2851DCAB7206F4B1C(0, Object_FindObjectsByType_TisLineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D_mDBCB88C5BA8C23BA9EC252A2851DCAB7206F4B1C_RuntimeMethod_var);
@@ -1247,13 +1262,13 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void DrawingManager_ClearAll_m9A5925B6540E835
 
 IL_000b:
 	{
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:96>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:97>
 		LineRendererU5BU5D_t5AA0E11EC99A18A11BCCCABDF088C854E50D394A* L_1 = V_0;
 		int32_t L_2 = V_1;
 		NullCheck(L_1);
 		int32_t L_3 = L_2;
 		LineRenderer_tEFEF960672DB69CB14B6D181FAE6292F0CF8B63D* L_4 = (L_1)->GetAt(static_cast<il2cpp_array_size_t>(L_3));
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:97>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:98>
 		NullCheck(L_4);
 		GameObject_t76FEDD663AB33C991A9C9A23129337651094216F* L_5;
 		L_5 = Component_get_gameObject_m57AEFBB14DB39EC476F740BA000E170355DE691B(L_4, NULL);
@@ -1265,7 +1280,7 @@ IL_000b:
 
 IL_001c:
 	{
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:96>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:97>
 		int32_t L_7 = V_1;
 		LineRendererU5BU5D_t5AA0E11EC99A18A11BCCCABDF088C854E50D394A* L_8 = V_0;
 		NullCheck(L_8);
@@ -1275,7 +1290,7 @@ IL_001c:
 		}
 	}
 	{
-		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:98>
+		//<source_info:/Users/satounatsuki/ARakugaki/Assets/Scripts/DrawingManager.cs:99>
 		return;
 	}
 }

@@ -5,18 +5,25 @@ class UnityARView extends StatefulWidget {
   const UnityARView({super.key});
 
   @override
-  State<UnityARView> createState() => _UnityARViewState();
+  UnityARViewState createState() => UnityARViewState();
 }
 
-class _UnityARViewState extends State<UnityARView> {
+class UnityARViewState extends State<UnityARView> {
   UnityWidgetController? _controller;
 
   void _onUnityCreated(UnityWidgetController controller) {
     _controller = controller;
   }
 
-  void sendMessageToUnity(String gameObject, String method, String message) {
-    _controller?.postMessage(gameObject, method, message);
+  void setColor(Color color) {
+    final r = color.r.toStringAsFixed(3);
+    final g = color.g.toStringAsFixed(3);
+    final b = color.b.toStringAsFixed(3);
+    _controller?.postMessage('XR Origin (Mobile AR)', 'SetColor', '$r,$g,$b,1.0');
+  }
+
+  void clearAll() {
+    _controller?.postMessage('XR Origin (Mobile AR)', 'ClearAll', '');
   }
 
   @override
