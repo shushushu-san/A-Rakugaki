@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/post.dart';
+import '../services/location_service.dart';
 import 'post_detail_screen.dart';
 
 class MapScreen extends StatefulWidget {
@@ -28,11 +29,13 @@ class MapScreenState extends State<MapScreen> {
   bool _locationDenied = false;
   Set<Marker> _markers = {};
   Post? _centeredPost;
+  // LocationService から最初の位置が届いたとき、まだ地図が準備できていない場合に保持する
+  LatLng? _pendingCameraTarget;
 
   @override
   void initState() {
     super.initState();
-    _initLocation();
+    _listenLocation();
     _rebuildMarkers();
   }
 
@@ -48,36 +51,23 @@ class MapScreenState extends State<MapScreen> {
     _mapController?.animateCamera(CameraUpdate.newLatLngZoom(target, 17.0));
   }
 
-  Future<void> _initLocation() async {
-    final permission = await _requestPermission();
-    if (!permission) {
-      setState(() => _locationDenied = true);
-      return;
-    }
-    await _moveToCurrentLocation();
-  }
-
-  Future<bool> _requestPermission() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return false;
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return false;
-    }
-    if (permission == LocationPermission.deniedForever) return false;
-    return true;
-  }
-
-  Future<void> _moveToCurrentLocation() async {
-    final pos = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-      ),
-    );
-    final latLng = LatLng(pos.latitude, pos.longitude);
-    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 16.0));
+  /// LocationService（シングルトン）から最初の位置を受け取りカメラを移動する。
+  /// 権限リクエストは LocationService 側で一元管理されるため、
+  /// MapScreen が直接 requestPermission() を呼ぶ競合が起きない。
+  void _listenLocation() {
+    LocationService.instance.positionStream.first.then((pos) {
+      if (!mounted) return;
+      final latLng = LatLng(pos.latitude, pos.longitude);
+      if (_mapController != null) {
+        _mapController!.animateCamera(
+            CameraUpdate.newLatLngZoom(latLng, 16.0));
+      } else {
+        // onMapCreated がまだ呼ばれていない場合は保持してあとで適用
+        _pendingCameraTarget = latLng;
+      }
+    }).catchError((Object _) {
+      if (mounted) setState(() => _locationDenied = true);
+    });
   }
 
   // ---- フキダシマーカー生成 ----
@@ -238,7 +228,15 @@ class MapScreenState extends State<MapScreen> {
             myLocationEnabled: true,
             mapType: MapType.normal,
             markers: _markers,
-            onMapCreated: (controller) => _mapController = controller,
+            onMapCreated: (controller) {
+              _mapController = controller;
+              // 位置情報が先に届いていた場合はここで反映
+              if (_pendingCameraTarget != null) {
+                controller.animateCamera(
+                    CameraUpdate.newLatLngZoom(_pendingCameraTarget!, 16.0));
+                _pendingCameraTarget = null;
+              }
+            },
             onCameraMove: _onCameraMove,
             onCameraIdle: _onCameraIdle,
           ),

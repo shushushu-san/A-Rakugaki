@@ -20,7 +20,10 @@ class PostService {
         .collection(_collection)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(Post.fromFirestore).toList());
+        .map<List<Post>>((snap) => snap.docs.map(Post.fromFirestore).toList())
+        .handleError((Object _) {
+      // PERMISSION_DENIED など Firestore エラーは黙殺して空リストを維持する
+    });
   }
 
   Future<void> createPost({

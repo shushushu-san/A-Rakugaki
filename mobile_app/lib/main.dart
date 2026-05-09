@@ -72,9 +72,15 @@ class HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initAuth();
-    PostService.instance.watchPosts().listen((posts) {
-      if (mounted) setState(() => _posts = posts);
-    });
+    PostService.instance.watchPosts().listen(
+      (posts) {
+        if (mounted) setState(() => _posts = posts);
+      },
+      onError: (Object _) {
+        // Firestore ルール未設定時など。空リストのまま続行する。
+      },
+      cancelOnError: false,
+    );
   }
 
   Future<void> _initAuth() async {
@@ -178,9 +184,10 @@ class HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // 通常タブ（SNS / Map / Favorites）
+          // UnityARView は _captureMode 時のみ生成し、起動時の初期化コストを避ける
           IndexedStack(
-            // キャプチャモード時はAR(index 3)を表示
-            index: _captureMode ? 3 : _currentIndex,
+            index: _currentIndex,
             children: [
               SNSScreen(
                 key: _snsKey,
@@ -197,11 +204,13 @@ class HomeScreenState extends State<HomeScreen> {
                 onRemove: _toggleFavorite,
                 onNavigateToMap: _navigateToMapLocation,
               ),
-              _buildARTab(), // index 3: キャプチャモード専用
             ],
           ),
-          // 近接バナー（キャプチャモード中・ARタブ中は非表示）
-          if (!_captureMode && _currentIndex != 3)
+          // キャプチャモード時のみ AR ビューをオーバーレイ（遅延初期化）
+          if (_captureMode)
+            Positioned.fill(child: _buildARTab()),
+          // 近接バナー（キャプチャモード中は非表示）
+          if (!_captureMode)
             Positioned(
               left: 0,
               right: 0,
@@ -235,6 +244,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   Widget _buildARTab() {
     return Stack(
+      fit: StackFit.expand,
       children: [
         RepaintBoundary(
           key: _arRepaintKey,

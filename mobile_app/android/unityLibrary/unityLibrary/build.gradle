@@ -13,7 +13,7 @@ def _sdkDir = _localProperties.getProperty('sdk.dir', '')
 def _ndkDir = _localProperties.getProperty('unity.ndk.dir', _localProperties.getProperty('ndk.dir', ''))
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    api fileTree(dir: 'libs', include: ['*.jar'])
     implementation(name: 'arcore_client', ext:'aar')
     implementation(name: 'UnityARCore', ext:'aar')
     implementation(name: 'ARPresto', ext:'aar')
@@ -156,7 +156,10 @@ def buildIl2CppImpl(String workingDir, String configuration, String architecture
     commandLineArgs.add("--incremental-g-c-time-slice=3")
     commandLineArgs.add("--configuration=${configuration}")
     commandLineArgs.add("--dotnetprofile=unityaot-linux")
-    commandLineArgs.add("--usymtool-path=${workingDir}/src/main/Il2CppOutputProject/usymtool")
+    def usymtoolPath = "${workingDir}/src/main/Il2CppOutputProject/usymtool"
+    if (new File(usymtoolPath).exists()) {
+        commandLineArgs.add("--usymtool-path=${usymtoolPath}")
+    }
     commandLineArgs.add("--profiler-report")
     commandLineArgs.add("--profiler-output-file=${workingDir}/build/il2cpp_${abi}_${configuration}/il2cpp_conv.traceevents")
     commandLineArgs.add("--print-command-line")
@@ -170,14 +173,37 @@ def buildIl2CppImpl(String workingDir, String configuration, String architecture
         commandLineArgs.add("--additional-libraries=${workingDir}/src/main/jniStaticLibs/${abi}/${fileName}")
     }
 
-    def executableExtension = ""
+    // Resolve il2cpp executable:
+    // Priority: (1) Windows .exe in exported deploy dir, (2) Unity Hub installation, (3) dotnet il2cpp.dll fallback
+    def il2cppDeploy = "${workingDir}/src/main/Il2CppOutputProject/IL2CPP/build/deploy"
+    def il2cppExeInProject = new File("${il2cppDeploy}/il2cpp.exe")
+    def il2cppDll    = new File("${il2cppDeploy}/il2cpp.dll")
+    // Unity Hub installed editors (Windows path)
+    def unityHubBase = "C:/Program Files/Unity/Hub/Editor"
+    def preferredUnityVersion = "6000.4.5f1"
+    def unityIl2CppExe = new File("${unityHubBase}/${preferredUnityVersion}/Editor/Data/il2cpp/build/deploy/il2cpp.exe")
+
+    List<String> command
     if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
-        executableExtension = ".exe"
         commandLineArgs = commandLineArgs*.replace('\"', '\\\"')
+        if (il2cppExeInProject.exists()) {
+            // Native Windows executable (exported from Windows Unity)
+            command = ["${il2cppDeploy}/il2cpp.exe", *commandLineArgs]
+        } else if (unityIl2CppExe.exists()) {
+            // Use Unity Hub installation's il2cpp.exe (handles macOS-exported projects on Windows)
+            println("Using Unity Hub il2cpp.exe: ${unityIl2CppExe}")
+            command = [unityIl2CppExe.absolutePath, *commandLineArgs]
+        } else if (il2cppDll.exists()) {
+            // Last resort: cross-platform .NET DLL via dotnet
+            command = ["C:/Program Files/dotnet/dotnet.exe", "${il2cppDeploy}/il2cpp.dll", *commandLineArgs]
+        } else {
+            throw new GradleException("il2cpp executable not found in deploy dir or Unity Hub at: ${unityHubBase}")
+        }
+    } else {
+        command = ["${il2cppDeploy}/il2cpp", *commandLineArgs]
     }
 
-    def command = "${workingDir}/src/main/Il2CppOutputProject/IL2CPP/build/deploy/il2cpp${executableExtension}";
-    execCommand(workingDir, [command, *commandLineArgs], [
+    execCommand(workingDir, command, [
         "ANDROID_SDK_ROOT": sdkDir,
         "ANDROID_NDK_ROOT": ndkDir,
         "NDK_ROOT"        : ndkDir,

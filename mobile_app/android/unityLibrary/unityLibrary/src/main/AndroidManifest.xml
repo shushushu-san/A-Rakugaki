@@ -31,5 +31,5 @@
   </application>
   <uses-permission android:name="android.permission.CAMERA" />
   <uses-feature android:name="android.hardware.camera.ar" android:required="true" />
-  <uses-feature android:name="com.google.ar.core.depth" android:required="true" />
+  <uses-feature android:name="com.google.ar.core.depth" android:required="false" />
 </manifest>

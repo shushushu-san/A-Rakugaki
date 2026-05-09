@@ -52,7 +52,7 @@ class UnityARViewState extends State<UnityARView> {
   Widget build(BuildContext context) {
     return UnityWidget(
       onUnityCreated: _onUnityCreated,
-      useAndroidViewSurface: false,
+      useAndroidViewSurface: true,
     );
   }
 }
