@@ -11,6 +11,7 @@ import 'unity_view.dart';
 import 'firebase_options.dart';
 import 'models/post.dart';
 import 'services/auth_service.dart';
+import 'services/favorite_service.dart';
 import 'services/post_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -64,7 +65,8 @@ class HomeScreenState extends State<HomeScreen> {
   final _mapKey = GlobalKey<MapScreenState>();
 
   int _currentIndex = 0;
-  final List<Post> _favorites = [];
+  Set<String> _favoriteIds = {};
+  List<Post> get _favorites => _posts.where((p) => _favoriteIds.contains(p.id)).toList();
   List<Post> _posts = [];
   String _userId = '';
 
@@ -85,7 +87,12 @@ class HomeScreenState extends State<HomeScreen> {
 
   Future<void> _initAuth() async {
     final uid = await AuthService.instance.signInIfNeeded();
-    if (mounted) setState(() => _userId = uid ?? '');
+    if (uid != null) {
+      final ids = await FavoriteService.instance.loadFavoriteIds(uid);
+      if (mounted) setState(() { _userId = uid; _favoriteIds = ids; });
+    } else {
+      if (mounted) setState(() => _userId = '');
+    }
   }
 
   bool _captureMode = false;
@@ -107,17 +114,22 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   void _toggleFavorite(Post post) {
+    final alreadyFavorited = _favoriteIds.contains(post.id);
     setState(() {
-      final exists = _favorites.any((f) => f.id == post.id);
-      if (exists) {
-        _favorites.removeWhere((f) => f.id == post.id);
+      if (alreadyFavorited) {
+        _favoriteIds.remove(post.id);
       } else {
-        _favorites.add(post);
+        _favoriteIds.add(post.id);
       }
     });
+    if (alreadyFavorited) {
+      FavoriteService.instance.removeFavorite(_userId, post.id);
+    } else {
+      FavoriteService.instance.addFavorite(_userId, post.id);
+    }
   }
 
-  bool _isFavorited(String postId) => _favorites.any((f) => f.id == postId);
+  bool _isFavorited(String postId) => _favoriteIds.contains(postId);
 
   void _navigateToMapLocation(LatLng location) {
     setState(() => _currentIndex = 1);

@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/post.dart';
 import '../theme.dart';
+import 'post_detail_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   final List<Post> favorites;
@@ -63,7 +64,14 @@ class _FavoriteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => PostDetailScreen(post: post),
+        ),
+      ),
+      child: Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       clipBehavior: Clip.hardEdge,
       child: Column(
@@ -133,6 +141,7 @@ class _FavoriteCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),    // Card
+    );    // GestureDetector
   }
 }

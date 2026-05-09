@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/post.dart';
 import '../services/post_service.dart';
@@ -69,6 +70,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  // 経路探索
+                  OutlinedButton.icon(
+                    onPressed: () => _openDirections(post.location.latitude, post.location.longitude),
+                    icon: const Icon(Icons.directions, color: kRed),
+                    label: const Text('経路探索', style: TextStyle(color: kRed)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: kRed),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   // 絵文字リアクション
                   Wrap(
@@ -122,6 +134,18 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openDirections(double lat, double lng) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=walking',
+    );
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      // Google マップが開けない場合はブラウザで開く
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
+    }
   }
 
   String _formatDate(DateTime dt) {
