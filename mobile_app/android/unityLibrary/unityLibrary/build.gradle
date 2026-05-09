@@ -2,6 +2,15 @@ apply plugin: 'com.android.library'
 apply from: '../shared/keepUnitySymbols.gradle'
 apply from: '../shared/common.gradle'
 
+// local.propertiesからSDK/NDKパスを読み込む（cross-platform対応）
+def _localProperties = new Properties()
+def _localPropertiesFile = new File("${rootDir}/local.properties")
+if (_localPropertiesFile.exists()) {
+    _localPropertiesFile.withReader('UTF-8') { reader -> _localProperties.load(reader) }
+}
+def _sdkDir = _localProperties.getProperty('sdk.dir', '')
+def _ndkDir = _localProperties.getProperty('ndk.dir', '')
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation(name: 'arcore_client', ext:'aar')
@@ -17,7 +26,7 @@ dependencies {
 
 android {
     namespace "com.unity3d.player"
-    ndkPath "/Applications/Unity/Hub/Editor/6000.4.4f1/PlaybackEngines/AndroidPlayer/NDK"
+    if (_ndkDir) ndkPath _ndkDir
     ndkVersion "27.2.12479018"
     compileSdk 36
     buildToolsVersion "36.0.0"
@@ -154,7 +163,7 @@ def buildIl2CppImpl(String workingDir, String configuration, String architecture
     commandLineArgs.add("--data-folder=${workingDir}/src/main/Il2CppOutputProject/Source/il2cppOutput/data")
     commandLineArgs.add("--generatedcppdir=${workingDir}/src/main/Il2CppOutputProject/Source/il2cppOutput")
     commandLineArgs.add("--cachedirectory=${workingDir}/build/il2cpp_${abi}_${configuration}/il2cpp_cache")
-    commandLineArgs.add("--tool-chain-path=" + getProperty("unity.androidNdkPath"))
+    commandLineArgs.add("--tool-chain-path=" + _ndkDir)
 
     staticLibraries.each { fileName ->
         commandLineArgs.add("--additional-libraries=${workingDir}/src/main/jniStaticLibs/${abi}/${fileName}")
@@ -168,10 +177,10 @@ def buildIl2CppImpl(String workingDir, String configuration, String architecture
 
     def command = "${workingDir}/src/main/Il2CppOutputProject/IL2CPP/build/deploy/il2cpp${executableExtension}";
     execCommand(workingDir, [command, *commandLineArgs], [
-        "ANDROID_SDK_ROOT": getProperty("unity.androidSdkPath"),
-        "ANDROID_NDK_ROOT": getProperty("unity.androidNdkPath"),
-        "NDK_ROOT": getProperty("unity.androidNdkPath"),
-        "ANDROID_NDK_HOME": getProperty("unity.androidNdkPath"),
+        "ANDROID_SDK_ROOT": _sdkDir,
+        "ANDROID_NDK_ROOT": _ndkDir,
+        "NDK_ROOT"        : _ndkDir,
+        "ANDROID_NDK_HOME": _ndkDir,
     ])
 
     def dbgLevel =  project.android.defaultConfig.ndk.debugSymbolLevel;
