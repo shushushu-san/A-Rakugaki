@@ -15,13 +15,6 @@ class PostDetailScreen extends StatefulWidget {
 }
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
-  void _react(String emoji) {
-    setState(() {
-      final r = widget.post.reactions;
-      r[emoji] = (r[emoji] ?? 0) + 1;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final post = widget.post;

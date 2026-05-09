@@ -41,7 +41,7 @@ class PostService {
 
     await _db.collection(_collection).add({
       'comment': comment,
-      if (imageUrl != null) 'imageUrl': imageUrl,
+      'imageUrl': imageUrl,
       'lat': lat,
       'lng': lng,
       'createdAt': FieldValue.serverTimestamp(),
