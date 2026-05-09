@@ -2,10 +2,13 @@
 .vscode/
 
 # Unity ビルド成果物
-mobile_app/android/unityLibrary/unityLibrary/build/
-mobile_app/android/unityLibrary/unityLibrary/src/main/Il2CppOutputProject/Source/il2cppOutput/compile-data.json
-mobile_app/android/unityLibrary/unityLibrary/src/main/jniLibs/
-mobile_app/android/unityLibrary/unityLibrary/symbols/
+mobile_app/android/unityLibrary/.gradle/
+mobile_app/android/unityLibrary/build/
+mobile_app/android/unityLibrary/launcher/build/
+mobile_app/android/unityLibrary/ARakugaki_BurstDebugInformation_DoNotShip/
+mobile_app/android/unityLibrary/src/main/Il2CppOutputProject/Source/il2cppOutput/compile-data.json
+mobile_app/android/unityLibrary/src/main/jniLibs/
+mobile_app/android/unityLibrary/symbols/
 
 # Flutter / Android Gradle ビルド成果物
 mobile_app/android/build/
