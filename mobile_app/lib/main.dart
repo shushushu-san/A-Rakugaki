@@ -16,6 +16,8 @@ import 'services/post_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'screens/favorites_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/post_detail_screen.dart';
@@ -79,21 +81,42 @@ class HomeScreenState extends State<HomeScreen> {
 
   int _currentIndex = 0;
   final List<Post> _favorites = [];
+  Set<String> _favoriteIds = {};
   List<Post> _posts = [];
   String _userId = '';
+
+  static const _favoritesKey = 'favorite_post_ids';
 
   @override
   void initState() {
     super.initState();
     _initAuth();
+    _loadFavoriteIds();
     PostService.instance.watchPosts().listen((posts) {
-      if (mounted) setState(() => _posts = posts);
+      if (!mounted) return;
+      setState(() {
+        _posts = posts;
+        _favorites
+          ..clear()
+          ..addAll(posts.where((p) => _favoriteIds.contains(p.id)));
+      });
     });
   }
 
   Future<void> _initAuth() async {
     final uid = await AuthService.instance.signInIfNeeded();
     if (mounted) setState(() => _userId = uid ?? '');
+  }
+
+  Future<void> _loadFavoriteIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList(_favoritesKey) ?? [];
+    if (mounted) setState(() => _favoriteIds = ids.toSet());
+  }
+
+  Future<void> _saveFavoriteIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_favoritesKey, _favoriteIds.toList());
   }
 
   bool _captureMode = false;
@@ -116,16 +139,18 @@ class HomeScreenState extends State<HomeScreen> {
 
   void _toggleFavorite(Post post) {
     setState(() {
-      final exists = _favorites.any((f) => f.id == post.id);
-      if (exists) {
+      if (_favoriteIds.contains(post.id)) {
+        _favoriteIds.remove(post.id);
         _favorites.removeWhere((f) => f.id == post.id);
       } else {
+        _favoriteIds.add(post.id);
         _favorites.add(post);
       }
     });
+    _saveFavoriteIds();
   }
 
-  bool _isFavorited(String postId) => _favorites.any((f) => f.id == postId);
+  bool _isFavorited(String postId) => _favoriteIds.contains(postId);
 
   void _navigateToMapLocation(LatLng location) {
     setState(() => _currentIndex = 1);
@@ -382,19 +407,18 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         ),
         Positioned(
-          top: top + 12,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Text(
-              '落書きして決定を押せ',
-              style: GoogleFonts.bebasNeue(
-                color: kRed,
-                fontSize: 20,
-                letterSpacing: 3,
-                shadows: const [Shadow(blurRadius: 8, color: Colors.black)],
-              ),
-            ),
+          top: top + 56,
+          left: 12,
+          right: 12,
+          child: _DrawingToolbar(
+            penColor: _penColor,
+            brushSize: _brushSize,
+            isErasing: _isErasing,
+            onColorTap: _handleColorTap,
+            onEraserTap: _toggleEraser,
+            onUndo: () => _unityKey.currentState?.undo(),
+            onClear: () => _unityKey.currentState?.clearAll(),
+            onSizeChanged: _setBrushSize,
           ),
         ),
         Positioned(
@@ -403,17 +427,16 @@ class HomeScreenState extends State<HomeScreen> {
           right: 12,
           child: Column(
             children: [
-              _DrawingToolbar(
-                penColor: _penColor,
-                brushSize: _brushSize,
-                isErasing: _isErasing,
-                onColorTap: _handleColorTap,
-                onEraserTap: _toggleEraser,
-                onUndo: () => _unityKey.currentState?.undo(),
-                onClear: () => _unityKey.currentState?.clearAll(),
-                onSizeChanged: _setBrushSize,
+              Text(
+                '落書きして決定を押せ',
+                style: GoogleFonts.bebasNeue(
+                  color: kRed,
+                  fontSize: 20,
+                  letterSpacing: 3,
+                  shadows: const [Shadow(blurRadius: 8, color: Colors.black)],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: _capturing ? null : _finishCapture,
                 icon: _capturing
