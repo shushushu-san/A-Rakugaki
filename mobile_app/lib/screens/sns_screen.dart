@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/post.dart';
+import '../services/post_service.dart';
 import '../theme.dart';
 import 'map_picker_screen.dart';
 import 'post_detail_screen.dart';
@@ -16,6 +17,7 @@ import 'post_detail_screen.dart';
 // ---------------------------------------------------------------------------
 class SNSScreen extends StatefulWidget {
   final List<Post> posts;
+  final String userId;
   final void Function(Post) onPostAdded;
   final void Function(void Function(File?)) onARCaptureRequested;
   final bool Function(String) isFavorited;
@@ -24,6 +26,7 @@ class SNSScreen extends StatefulWidget {
   const SNSScreen({
     super.key,
     required this.posts,
+    required this.userId,
     required this.onPostAdded,
     required this.onARCaptureRequested,
     required this.isFavorited,
@@ -418,10 +421,12 @@ class _PostCard extends StatefulWidget {
 
 class _PostCardState extends State<_PostCard> {
   void _react(String emoji) {
-    setState(() {
-      final r = widget.post.reactions;
-      r[emoji] = (r[emoji] ?? 0) + 1;
-    });
+    final count = widget.post.reactions[emoji] ?? 0;
+    PostService.instance.toggleReaction(
+      postId: widget.post.id,
+      emoji: emoji,
+      hasReacted: count > 0,
+    );
   }
 
   @override
@@ -443,14 +448,11 @@ class _PostCardState extends State<_PostCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 画像
+            // 画像（ローカルファイル or Firebase Storage URL）
             if (post.image != null)
-              Image.file(
-                post.image!,
-                width: double.infinity,
-                height: 220,
-                fit: BoxFit.cover,
-              ),
+              Image.file(post.image!, width: double.infinity, height: 220, fit: BoxFit.cover)
+            else if (post.imageUrl != null)
+              Image.network(post.imageUrl!, width: double.infinity, height: 220, fit: BoxFit.cover),
 
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),

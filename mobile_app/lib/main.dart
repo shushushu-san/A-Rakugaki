@@ -1,12 +1,18 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'unity_view.dart';
 
+import 'firebase_options.dart';
 import 'models/post.dart';
+import 'services/auth_service.dart';
+import 'services/post_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -15,7 +21,13 @@ import 'screens/map_screen.dart';
 import 'screens/sns_screen.dart';
 import 'theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.debug,
+    appleProvider: AppleProvider.debug,
+  );
   GoogleFonts.config.allowRuntimeFetching = false;
   runApp(const MyApp());
 }
@@ -56,41 +68,39 @@ class HomeScreenState extends State<HomeScreen> {
 
   int _currentIndex = 0;
   final List<Post> _favorites = [];
+  List<Post> _posts = [];
+  String _userId = '';
 
-  List<Post> _posts = [
-    Post(
-      id: 'dummy_1',
-      comment: '渋谷スクランブル交差点に落書きしてみた！人多すぎてARで描くの難しかった笑',
-      location: const LatLng(35.6595, 139.7004),
-      createdAt: DateTime(2026, 5, 1, 14, 30),
-    ),
-    Post(
-      id: 'dummy_2',
-      comment: '浅草寺の前に巨大な龍を描いた。観光客に見せたい',
-      location: const LatLng(35.7148, 139.7967),
-      createdAt: DateTime(2026, 5, 3, 10, 0),
-    ),
-    Post(
-      id: 'dummy_3',
-      comment: '新宿御苑の桜の木に虹色のペイントを追加。春っぽくしてみた',
-      location: const LatLng(35.6852, 139.7100),
-      createdAt: DateTime(2026, 5, 5, 16, 45),
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _initAuth();
+    PostService.instance.watchPosts().listen((posts) {
+      if (mounted) setState(() => _posts = posts);
+    });
+  }
+
+  Future<void> _initAuth() async {
+    final uid = await AuthService.instance.signInIfNeeded();
+    if (mounted) setState(() => _userId = uid ?? '');
+  }
 
   bool _captureMode = false;
   bool _capturing = false;
   void Function(File?)? _onCaptureDone;
 
-  static const _colors = [
-    Colors.red,
-    Colors.blue,
-    Colors.green,
-    Colors.white,
-  ];
+  Color _penColor = Colors.red;
+  double _brushSize = 0.005;
+  bool _isErasing = false;
 
-  void _onPostAdded(Post post) {
-    setState(() => _posts = [post, ..._posts]);
+  Future<void> _onPostAdded(Post post) async {
+    await PostService.instance.createPost(
+      comment: post.comment,
+      lat: post.location.latitude,
+      lng: post.location.longitude,
+      userId: _userId,
+      imageFile: post.image,
+    );
   }
 
   void _toggleFavorite(Post post) {
@@ -167,6 +177,7 @@ class HomeScreenState extends State<HomeScreen> {
           SNSScreen(
             key: _snsKey,
             posts: _posts,
+            userId: _userId,
             onPostAdded: _onPostAdded,
             onARCaptureRequested: enterCaptureMode,
             isFavorited: _isFavorited,
@@ -210,42 +221,71 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildARControls() {
-    return Positioned(
-      bottom: 40,
-      left: 0,
-      right: 0,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ..._colors.map((color) => GestureDetector(
-                onTap: () => _unityKey.currentState?.setColor(color),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey, width: 2),
-                  ),
-                ),
-              )),
-          const SizedBox(width: 16),
-          GestureDetector(
-            onTap: () => _unityKey.currentState?.clearAll(),
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child:
-                  const Text('消去', style: TextStyle(color: Colors.white)),
-            ),
+  void _setColor(Color color) {
+    setState(() {
+      _penColor = color;
+      _isErasing = false;
+    });
+    _unityKey.currentState?.setEraser(false);
+    _unityKey.currentState?.setColor(color);
+  }
+
+  void _toggleEraser() {
+    setState(() => _isErasing = !_isErasing);
+    _unityKey.currentState?.setEraser(_isErasing);
+  }
+
+  void _setBrushSize(double size) {
+    setState(() => _brushSize = size);
+    _unityKey.currentState?.setWidth(size);
+  }
+
+  Future<void> _openColorPicker() async {
+    Color picked = _penColor;
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: kCard,
+        title: const Text('色を選ぶ', style: TextStyle(color: kWhite)),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: picked,
+            onColorChanged: (c) => picked = c,
+            enableAlpha: false,
+            labelTypes: const [],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('キャンセル', style: TextStyle(color: kGrey)),
+          ),
+          FilledButton(
+            onPressed: () {
+              _setColor(picked);
+              Navigator.of(context).pop();
+            },
+            child: const Text('決定'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildARControls() {
+    return Positioned(
+      bottom: 32,
+      left: 12,
+      right: 12,
+      child: _DrawingToolbar(
+        penColor: _penColor,
+        brushSize: _brushSize,
+        isErasing: _isErasing,
+        onColorTap: _openColorPicker,
+        onEraserTap: _toggleEraser,
+        onUndo: () => _unityKey.currentState?.undo(),
+        onClear: () => _unityKey.currentState?.clearAll(),
+        onSizeChanged: _setBrushSize,
       ),
     );
   }
@@ -254,7 +294,6 @@ class HomeScreenState extends State<HomeScreen> {
     final top = MediaQuery.of(context).padding.top;
     return Stack(
       children: [
-        // キャンセルボタン
         Positioned(
           top: top + 8,
           left: 8,
@@ -264,7 +303,6 @@ class HomeScreenState extends State<HomeScreen> {
             style: IconButton.styleFrom(backgroundColor: Colors.black38),
           ),
         ),
-        // ガイドテキスト
         Positioned(
           top: top + 12,
           left: 0,
@@ -281,49 +319,23 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        // 色ボタン + 確定ボタン
         Positioned(
-          bottom: 40,
-          left: 0,
-          right: 0,
+          bottom: 32,
+          left: 12,
+          right: 12,
           child: Column(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ..._colors.map((color) => GestureDetector(
-                        onTap: () =>
-                            _unityKey.currentState?.setColor(color),
-                        child: Container(
-                          margin:
-                              const EdgeInsets.symmetric(horizontal: 8),
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border:
-                                Border.all(color: Colors.grey, width: 2),
-                          ),
-                        ),
-                      )),
-                  const SizedBox(width: 16),
-                  GestureDetector(
-                    onTap: () => _unityKey.currentState?.clearAll(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text('消去',
-                          style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
-                ],
+              _DrawingToolbar(
+                penColor: _penColor,
+                brushSize: _brushSize,
+                isErasing: _isErasing,
+                onColorTap: _openColorPicker,
+                onEraserTap: _toggleEraser,
+                onUndo: () => _unityKey.currentState?.undo(),
+                onClear: () => _unityKey.currentState?.clearAll(),
+                onSizeChanged: _setBrushSize,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: _capturing ? null : _finishCapture,
                 icon: _capturing
@@ -344,6 +356,139 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 描画ツールバー（通常ARモード・キャプチャモード共用）
+// ---------------------------------------------------------------------------
+class _DrawingToolbar extends StatelessWidget {
+  final Color penColor;
+  final double brushSize;
+  final bool isErasing;
+  final VoidCallback onColorTap;
+  final VoidCallback onEraserTap;
+  final VoidCallback onUndo;
+  final VoidCallback onClear;
+  final ValueChanged<double> onSizeChanged;
+
+  const _DrawingToolbar({
+    required this.penColor,
+    required this.brushSize,
+    required this.isErasing,
+    required this.onColorTap,
+    required this.onEraserTap,
+    required this.onUndo,
+    required this.onClear,
+    required this.onSizeChanged,
+  });
+
+  Widget _iconBtn({
+    required IconData icon,
+    required VoidCallback onTap,
+    bool active = false,
+    String? tooltip,
+  }) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 44,
+          height: 44,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: active ? kRed : Colors.black54,
+            shape: BoxShape.circle,
+            border: Border.all(color: active ? kRed : Colors.white30, width: 1.5),
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // カラーピッカー
+              GestureDetector(
+                onTap: onColorTap,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: penColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isErasing ? Colors.white30 : Colors.white,
+                      width: isErasing ? 1.5 : 3,
+                    ),
+                  ),
+                ),
+              ),
+              // 消しゴム
+              _iconBtn(
+                icon: Icons.auto_fix_normal,
+                onTap: onEraserTap,
+                active: isErasing,
+                tooltip: '消しゴム',
+              ),
+              // アンドゥ
+              _iconBtn(
+                icon: Icons.undo,
+                onTap: onUndo,
+                tooltip: '一つ戻す',
+              ),
+              // 全消去
+              _iconBtn(
+                icon: Icons.delete_outline,
+                onTap: onClear,
+                tooltip: '全消去',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // ブラシサイズスライダー
+          Row(
+            children: [
+              const Icon(Icons.brush, color: Colors.white54, size: 16),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: kRed,
+                    inactiveTrackColor: Colors.white24,
+                    thumbColor: kRed,
+                    overlayColor: kRed.withValues(alpha: 0.2),
+                    trackHeight: 3,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                  ),
+                  child: Slider(
+                    value: brushSize,
+                    min: 0.002,
+                    max: 0.02,
+                    onChanged: onSizeChanged,
+                  ),
+                ),
+              ),
+              const Icon(Icons.brush, color: Colors.white, size: 22),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

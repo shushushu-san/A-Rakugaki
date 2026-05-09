@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/post.dart';
+import '../services/post_service.dart';
 import '../theme.dart';
 
 class PostDetailScreen extends StatefulWidget {
@@ -42,11 +43,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (post.image != null)
-              Image.file(
-                post.image!,
-                width: double.infinity,
-                fit: BoxFit.contain,
-              ),
+              Image.file(post.image!, width: double.infinity, fit: BoxFit.contain)
+            else if (post.imageUrl != null)
+              Image.network(post.imageUrl!, width: double.infinity, fit: BoxFit.contain),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -64,7 +63,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     children: Post.defaultEmojis.map((emoji) {
                       final count = post.reactions[emoji] ?? 0;
                       return GestureDetector(
-                        onTap: () => _react(emoji),
+                        onTap: () => PostService.instance.toggleReaction(
+                          postId: post.id,
+                          emoji: emoji,
+                          hasReacted: count > 0,
+                        ),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(

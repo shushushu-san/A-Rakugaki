@@ -24858,7 +24858,7 @@ IL2CPP_EXTERN_C  String_t* Record_ToString_mC6664AF6A40866414A8D5EE160B6C93BD317
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #endif
-// Method Definition Index: 63763
+// Method Definition Index: 63767
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1__ctor_m2158A986C5BA5A84C024E8F57966EE09ED7CEF5F_gshared (Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0B3C4B88E* __this, const RuntimeMethod* method) 
 {
 	{
@@ -24878,7 +24878,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1__ctor_m2158A986C5BA5A84C024E
 		return;
 	}
 }
-// Method Definition Index: 63764
+// Method Definition Index: 63768
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1_Enter_mECC60BAA3DBE95CCCC9DF251BB6CAC7A8F01B0F7_gshared (Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0B3C4B88E* __this, RuntimeObject* ___0_o, const RuntimeMethod* method) 
 {
 	{
@@ -24909,7 +24909,7 @@ IL_002e:
 		return;
 	}
 }
-// Method Definition Index: 63765
+// Method Definition Index: 63769
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR bool Recursion_1_TryEnter_mF2BBD1C4750FACEBABF51E0174069875F6300C40_gshared (Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0B3C4B88E* __this, RuntimeObject* ___0_o, const RuntimeMethod* method) 
 {
 	int32_t V_0 = 0;
@@ -25001,7 +25001,7 @@ IL_0056:
 		return (bool)1;
 	}
 }
-// Method Definition Index: 63766
+// Method Definition Index: 63770
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1_Exit_m7992FF3DB0015F0970BEBA638FE7AFA2BF48DB8D_gshared (Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0B3C4B88E* __this, RuntimeObject* ___0_o, const RuntimeMethod* method) 
 {
 	RuntimeObject* V_0 = NULL;
@@ -25100,7 +25100,7 @@ IL_0083:
 		return;
 	}
 }
-// Method Definition Index: 63767
+// Method Definition Index: 63771
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1_Dispose_mBA9A523286D4E1C2460B593E88DAB98ECA6140A3_gshared (Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0B3C4B88E* __this, const RuntimeMethod* method) 
 {
 	{
@@ -25129,7 +25129,7 @@ IL_0014:
 		return;
 	}
 }
-// Method Definition Index: 63768
+// Method Definition Index: 63772
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1_Free_m0515CAB620F47594F4AE88ADA18F0043BBE7DC28_gshared (Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0B3C4B88E* __this, const RuntimeMethod* method) 
 {
 	{
@@ -25140,7 +25140,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1_Free_m0515CAB620F47594F4AE88
 		return;
 	}
 }
-// Method Definition Index: 63769
+// Method Definition Index: 63773
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1_Unity_VisualScripting_IPoolable_New_mEFC19955F7CF48273897EC3241E486FD631F1BB2_gshared (Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0B3C4B88E* __this, const RuntimeMethod* method) 
 {
 	{
@@ -25150,7 +25150,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1_Unity_VisualScripting_IPoola
 		return;
 	}
 }
-// Method Definition Index: 63770
+// Method Definition Index: 63774
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1_Unity_VisualScripting_IPoolable_Free_mCBE194AC2FD753D141D1EAB52408A2F0174EDC39_gshared (Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0B3C4B88E* __this, const RuntimeMethod* method) 
 {
 	{
@@ -25168,7 +25168,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Recursion_1_Unity_VisualScripting_IPoola
 		return;
 	}
 }
-// Method Definition Index: 63771
+// Method Definition Index: 63775
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0B3C4B88E* Recursion_1_New_m4A1FA8900039A2B164E4D3B42C6CC2B9FB44D284_gshared (const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -25187,7 +25187,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0
 		return L_1;
 	}
 }
-// Method Definition Index: 63772
+// Method Definition Index: 63776
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR Recursion_1_tE673536A745AAEA6CBBB1EA24E930FC0B3C4B88E* Recursion_1_New_mFFB56DD16C25FD090430B16E12C4ED8073EBEBD8_gshared (int32_t ___0_maxDepth, const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -25308,7 +25308,7 @@ IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR uint32_t Record_get_version_m520F
 		return L_0;
 	}
 }
-// Method Definition Index: 63777
+// Method Definition Index: 63781
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR int32_t Recursion_get_defaultMaxDepth_mC8933442B49FF3E0AFB3DB531B77D423C6EE72B7_inline (const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -25324,7 +25324,7 @@ IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR int32_t Recursion_get_defaultMaxD
 		return L_0;
 	}
 }
-// Method Definition Index: 63779
+// Method Definition Index: 63783
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR bool Recursion_get_safeMode_mF3F1EDB6847A653A15261E67F7B660CB005C9011_inline (const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;

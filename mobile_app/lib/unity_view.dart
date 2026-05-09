@@ -15,15 +15,31 @@ class UnityARViewState extends State<UnityARView> {
     _controller = controller;
   }
 
+  void _post(String method, String arg) {
+    _controller?.postMessage('XR Origin (Mobile AR)', method, arg);
+  }
+
   void setColor(Color color) {
     final r = color.r.toStringAsFixed(3);
     final g = color.g.toStringAsFixed(3);
     final b = color.b.toStringAsFixed(3);
-    _controller?.postMessage('XR Origin (Mobile AR)', 'SetColor', '$r,$g,$b,1.0');
+    _post('SetColor', '$r,$g,$b,1.0');
+  }
+
+  void setWidth(double width) {
+    _post('SetWidth', width.toStringAsFixed(4));
+  }
+
+  void setEraser(bool enabled) {
+    _post('SetEraser', enabled ? 'true' : 'false');
+  }
+
+  void undo() {
+    _post('Undo', '');
   }
 
   void clearAll() {
-    _controller?.postMessage('XR Origin (Mobile AR)', 'ClearAll', '');
+    _post('ClearAll', '');
   }
 
   @override
