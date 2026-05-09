@@ -40,6 +40,10 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}"/>
+        <!-- ARCore Geospatial API（Unity ARCore Extensions が起動時に参照） -->
+        <meta-data
+            android:name="com.google.android.ar.API_KEY"
+            android:value="${ARCORE_API_KEY}"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

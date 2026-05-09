@@ -5,6 +5,7 @@ import '../models/post.dart';
 import '../services/post_service.dart';
 import '../theme.dart';
 import 'ar_viewer_screen.dart';
+import 'geospatial_viewer_screen.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Post post;
@@ -51,15 +52,27 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   // AR ビューワーへの導線
+                  // Geospatial 対応投稿は Unity ベースの本格 AR ビューワーへ、
+                  // それ以外は GPS+方位の簡易ビューワーへ遷移
                   FilledButton.icon(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         fullscreenDialog: true,
-                        builder: (_) => ARViewerScreen(post: post),
+                        builder: (_) => post.hasGeospatialContent
+                            ? GeospatialViewerScreen(post: post)
+                            : ARViewerScreen(post: post),
                       ),
                     ),
-                    icon: const Icon(Icons.view_in_ar),
-                    label: const Text('現地でARで見る'),
+                    icon: Icon(
+                      post.hasGeospatialContent
+                          ? Icons.public
+                          : Icons.view_in_ar,
+                    ),
+                    label: Text(
+                      post.hasGeospatialContent
+                          ? '現地で AR 復元（VPS）'
+                          : '現地で AR で見る（簡易）',
+                    ),
                     style: FilledButton.styleFrom(
                       backgroundColor: kRed,
                       foregroundColor: Colors.white,

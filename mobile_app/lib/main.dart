@@ -9,6 +9,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'unity_view.dart';
 
 import 'firebase_options.dart';
+import 'models/geospatial.dart';
 import 'models/post.dart';
 import 'services/auth_service.dart';
 import 'services/post_service.dart';
@@ -27,6 +28,19 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   GoogleFonts.config.allowRuntimeFetching = false;
   runApp(const MyApp());
+}
+
+/// AR キャプチャモードからの戻り値。
+/// 画像（プレビュー）に加えて、VPS取得済みなら Geospatial Pose と 3D ストロークも含む。
+class CaptureResult {
+  final File? image;
+  final GeospatialPose? pose;
+  final List<Stroke> strokes;
+  const CaptureResult({
+    this.image,
+    this.pose,
+    this.strokes = const [],
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -84,7 +98,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   bool _captureMode = false;
   bool _capturing = false;
-  void Function(File?)? _onCaptureDone;
+  void Function(CaptureResult)? _onCaptureDone;
 
   Color _penColor = Colors.red;
   double _brushSize = 0.005;
@@ -120,16 +134,18 @@ class HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void enterCaptureMode(void Function(File?) onDone) {
+  void enterCaptureMode(void Function(CaptureResult) onDone) {
     setState(() {
       _currentIndex = 2;
       _captureMode = true;
       _onCaptureDone = onDone;
     });
+    // Unity 側を描画モードに切り替え（VPS 取得開始）
+    _unityKey.currentState?.startDrawMode();
   }
 
   void _cancelCapture() {
-    _onCaptureDone?.call(null);
+    _onCaptureDone?.call(const CaptureResult(image: null));
     setState(() {
       _captureMode = false;
       _currentIndex = 0;
@@ -139,20 +155,49 @@ class HomeScreenState extends State<HomeScreen> {
 
   Future<void> _finishCapture() async {
     setState(() => _capturing = true);
+    File? capturedFile;
+    GeospatialPose? pose;
+    List<Stroke> strokes = const [];
     try {
+      // 1. 画面キャプチャ（プレビュー画像）
       final boundary = _arRepaintKey.currentContext!.findRenderObject()
           as RenderRepaintBoundary;
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
       final bytes = byteData!.buffer.asUint8List();
-      final file = File(
+      capturedFile = File(
           '${Directory.systemTemp.path}/ar_${DateTime.now().millisecondsSinceEpoch}.png');
-      await file.writeAsBytes(bytes);
-      _onCaptureDone?.call(file);
-    } catch (_) {
-      _onCaptureDone?.call(null);
-    } finally {
+      await capturedFile.writeAsBytes(bytes);
+
+      // 2. Unity 側から Geospatial Pose を取得（VPS が確立していれば成功）
+      try {
+        final poseRes = await _unityKey.currentState!.requestCurrentPose();
+        if (poseRes['ok'] == true) {
+          pose = GeospatialPose.fromJson(Map<String, dynamic>.from(poseRes));
+        }
+      } catch (_) {
+        // VPS 取得失敗（屋内・カバレッジ外など）。pose=null のまま続行。
+      }
+
+      // 3. ストロークデータを取得（あれば）
+      try {
+        final strokesRes =
+            await _unityKey.currentState!.requestDrawnStrokes();
+        final list = strokesRes['strokes'] as List?;
+        if (list != null) {
+          strokes = list
+              .map((e) =>
+                  Stroke.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList();
+        }
+      } catch (_) {/* ストローク取得失敗は無視 */}
+    } catch (_) {/* ignore */} finally {
+      _onCaptureDone?.call(CaptureResult(
+        image: capturedFile,
+        pose: pose,
+        strokes: strokes,
+      ));
       if (mounted) {
         setState(() {
           _capturing = false;

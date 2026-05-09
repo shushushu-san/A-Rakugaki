@@ -5,6 +5,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../main.dart' show CaptureResult;
+import '../models/geospatial.dart';
 import '../models/post.dart';
 import '../services/post_service.dart';
 import '../theme.dart';
@@ -19,7 +21,7 @@ class SNSScreen extends StatefulWidget {
   final List<Post> posts;
   final String userId;
   final void Function(Post) onPostAdded;
-  final void Function(void Function(File?) onDone) onARCaptureRequested;
+  final void Function(void Function(CaptureResult) onDone) onARCaptureRequested;
   final bool Function(String) isFavorited;
   final void Function(Post) onFavoriteToggle;
 
@@ -38,13 +40,20 @@ class SNSScreen extends StatefulWidget {
 }
 
 class SNSScreenState extends State<SNSScreen> {
-  Future<void> _openPostSheet({File? prefilledImage, Post? basePost}) async {
+  Future<void> _openPostSheet({
+    File? prefilledImage,
+    Post? basePost,
+    GeospatialPose? prefilledPose,
+    List<Stroke>? prefilledStrokes,
+  }) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => _PostSheet(
         prefilledImage: prefilledImage,
+        prefilledPose: prefilledPose,
+        prefilledStrokes: prefilledStrokes,
         basePost: basePost,
         userId: widget.userId,
         existingPosts: widget.posts,
@@ -52,11 +61,16 @@ class SNSScreenState extends State<SNSScreen> {
           Navigator.of(context).pop();
           // ゴースト表示は端末差で位置合わせができないため一旦無効化。
           // selectedBase は AR 終了後にシートを再オープンする際の上書きフラグ用に保持する。
-          widget.onARCaptureRequested((file) {
-            onDone(file);
-            if (file != null) {
+          widget.onARCaptureRequested((result) {
+            onDone(result.image);
+            if (result.image != null) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                _openPostSheet(prefilledImage: file, basePost: selectedBase);
+                _openPostSheet(
+                  prefilledImage: result.image,
+                  prefilledPose: result.pose,
+                  prefilledStrokes: result.strokes,
+                  basePost: selectedBase,
+                );
               });
             }
           });
@@ -116,6 +130,8 @@ class SNSScreenState extends State<SNSScreen> {
 // ---------------------------------------------------------------------------
 class _PostSheet extends StatefulWidget {
   final File? prefilledImage;
+  final GeospatialPose? prefilledPose;
+  final List<Stroke>? prefilledStrokes;
   final Post? basePost; // 上書き対象（既にARから戻ってきている場合）
   final String userId;
   final List<Post> existingPosts;
@@ -124,6 +140,8 @@ class _PostSheet extends StatefulWidget {
 
   const _PostSheet({
     required this.prefilledImage,
+    required this.prefilledPose,
+    required this.prefilledStrokes,
     required this.basePost,
     required this.userId,
     required this.existingPosts,
@@ -256,22 +274,32 @@ Future<void> _fetchCurrentLocation() async {
 
     setState(() => _submitting = true);
     try {
+      // Geospatial Pose があれば位置はそちら優先（VPS センチ精度）
+      final pose = widget.prefilledPose;
+      final lat = pose?.lat ?? location.latitude;
+      final lng = pose?.lng ?? location.longitude;
+      final strokes = widget.prefilledStrokes;
+
       if (_overwriteMode && _nearbyPost != null) {
         await PostService.instance.replacePost(
           oldPost: _nearbyPost!,
           comment: comment,
-          lat: location.latitude,
-          lng: location.longitude,
+          lat: lat,
+          lng: lng,
           userId: widget.userId,
           imageFile: _image,
+          geoPose: pose,
+          strokes: strokes,
         );
       } else {
         await PostService.instance.createPost(
           comment: comment,
-          lat: location.latitude,
-          lng: location.longitude,
+          lat: lat,
+          lng: lng,
           userId: widget.userId,
           imageFile: _image,
+          geoPose: pose,
+          strokes: strokes,
         );
       }
       if (mounted) Navigator.of(context).pop();
@@ -324,6 +352,30 @@ Future<void> _fetchCurrentLocation() async {
             ),
             const SizedBox(height: 12),
 
+            // Geospatial Pose 取得済みなら表示（精度の目安として）
+            if (widget.prefilledPose != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: kRed.withValues(alpha: 0.1),
+                  border: Border.all(color: kRed),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.public, size: 16, color: kRed),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'AR ピン止め可能 '
+                        '(±${widget.prefilledPose!.horizontalAccuracy?.toStringAsFixed(1) ?? '?'}m)'
+                        ' / strokes: ${widget.prefilledStrokes?.length ?? 0}',
+                        style: const TextStyle(color: kWhite, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             // 近くの既存投稿があれば上書きの導線を表示
             if (_nearbyPost != null && widget.basePost == null)
               _OverwriteHintCard(

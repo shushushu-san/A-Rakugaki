@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
+import '../models/geospatial.dart';
 import '../models/post.dart';
 
 class PostService {
@@ -29,6 +30,8 @@ class PostService {
     required double lng,
     required String userId,
     File? imageFile,
+    GeospatialPose? geoPose,
+    List<Stroke>? strokes,
   }) async {
     String? imageUrl;
     if (imageFile != null) {
@@ -47,6 +50,9 @@ class PostService {
       'createdAt': FieldValue.serverTimestamp(),
       'userId': userId,
       'reactions': <String, int>{},
+      if (geoPose != null) 'geoPose': geoPose.toJson(),
+      if (strokes != null && strokes.isNotEmpty)
+        'strokes': strokes.map((s) => s.toJson()).toList(),
     });
   }
 
@@ -70,6 +76,8 @@ class PostService {
     required double lng,
     required String userId,
     File? imageFile,
+    GeospatialPose? geoPose,
+    List<Stroke>? strokes,
   }) async {
     // 先に新規投稿を作って成功を確認してから旧投稿を消す
     await createPost(
@@ -78,6 +86,8 @@ class PostService {
       lng: lng,
       userId: userId,
       imageFile: imageFile,
+      geoPose: geoPose,
+      strokes: strokes,
     );
     await deletePost(oldPost);
   }

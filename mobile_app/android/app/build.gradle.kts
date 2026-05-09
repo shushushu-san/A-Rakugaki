@@ -38,6 +38,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders["MAPS_API_KEY"] = localProps.getProperty("MAPS_API_KEY", "")
+        manifestPlaceholders["ARCORE_API_KEY"] = localProps.getProperty("ARCORE_API_KEY", "")
         // Unity AR supports arm64-v8a and armeabi-v7a only (no x86/x86_64)
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
