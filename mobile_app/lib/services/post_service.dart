@@ -50,6 +50,38 @@ class PostService {
     });
   }
 
+  /// 投稿を削除する。Firebase Storage の画像も同時に消す（あれば）。
+  Future<void> deletePost(Post post) async {
+    // ストレージ削除はベストエフォート（失敗してもFirestoreは消す）
+    final url = post.imageUrl;
+    if (url != null && url.isNotEmpty) {
+      try {
+        await _storage.refFromURL(url).delete();
+      } catch (_) {/* 元から無い等は無視 */}
+    }
+    await _db.collection(_collection).doc(post.id).delete();
+  }
+
+  /// 既存の投稿を削除して、その代わりに新規投稿を作る（場所の上書き）。
+  Future<void> replacePost({
+    required Post oldPost,
+    required String comment,
+    required double lat,
+    required double lng,
+    required String userId,
+    File? imageFile,
+  }) async {
+    // 先に新規投稿を作って成功を確認してから旧投稿を消す
+    await createPost(
+      comment: comment,
+      lat: lat,
+      lng: lng,
+      userId: userId,
+      imageFile: imageFile,
+    );
+    await deletePost(oldPost);
+  }
+
   /// リアクションをトグルする（Firestore トランザクション）
   Future<void> toggleReaction({
     required String postId,

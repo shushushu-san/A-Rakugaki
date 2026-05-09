@@ -9,7 +9,8 @@ if (_localPropertiesFile.exists()) {
     _localPropertiesFile.withReader('UTF-8') { reader -> _localProperties.load(reader) }
 }
 def _sdkDir = _localProperties.getProperty('sdk.dir', '')
-def _ndkDir = _localProperties.getProperty('ndk.dir', '')
+// unity.ndk.dir takes priority over ndk.dir to avoid global NDK version conflicts
+def _ndkDir = _localProperties.getProperty('unity.ndk.dir', _localProperties.getProperty('ndk.dir', ''))
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -107,7 +108,7 @@ android {
             }
             else {
                 archs.each { arch, abi ->
-                    buildIl2CppImpl(workingDir, 'Release', arch, abi, staticLibs[arch] as String[]);
+                    buildIl2CppImpl(workingDir, 'Release', arch, abi, staticLibs[arch] as String[], _ndkDir, _sdkDir);
                 }
             }
         }
@@ -145,7 +146,7 @@ def getIl2CppSymbolPath(String workingDir, String abi) {
     return "${workingDir}/symbols/${abi}/libil2cpp.so";
 }
 
-def buildIl2CppImpl(String workingDir, String configuration, String architecture, String abi, String[] staticLibraries) {
+def buildIl2CppImpl(String workingDir, String configuration, String architecture, String abi, String[] staticLibraries, String ndkDir, String sdkDir) {
     def commandLineArgs = []
     commandLineArgs.add("--compile-cpp")
     commandLineArgs.add("--platform=Android")
@@ -163,7 +164,7 @@ def buildIl2CppImpl(String workingDir, String configuration, String architecture
     commandLineArgs.add("--data-folder=${workingDir}/src/main/Il2CppOutputProject/Source/il2cppOutput/data")
     commandLineArgs.add("--generatedcppdir=${workingDir}/src/main/Il2CppOutputProject/Source/il2cppOutput")
     commandLineArgs.add("--cachedirectory=${workingDir}/build/il2cpp_${abi}_${configuration}/il2cpp_cache")
-    commandLineArgs.add("--tool-chain-path=" + _ndkDir)
+    commandLineArgs.add("--tool-chain-path=" + ndkDir)
 
     staticLibraries.each { fileName ->
         commandLineArgs.add("--additional-libraries=${workingDir}/src/main/jniStaticLibs/${abi}/${fileName}")
@@ -177,10 +178,10 @@ def buildIl2CppImpl(String workingDir, String configuration, String architecture
 
     def command = "${workingDir}/src/main/Il2CppOutputProject/IL2CPP/build/deploy/il2cpp${executableExtension}";
     execCommand(workingDir, [command, *commandLineArgs], [
-        "ANDROID_SDK_ROOT": _sdkDir,
-        "ANDROID_NDK_ROOT": _ndkDir,
-        "NDK_ROOT"        : _ndkDir,
-        "ANDROID_NDK_HOME": _ndkDir,
+        "ANDROID_SDK_ROOT": sdkDir,
+        "ANDROID_NDK_ROOT": ndkDir,
+        "NDK_ROOT"        : ndkDir,
+        "ANDROID_NDK_HOME": ndkDir,
     ])
 
     def dbgLevel =  project.android.defaultConfig.ndk.debugSymbolLevel;

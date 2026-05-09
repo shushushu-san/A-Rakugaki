@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -18,16 +17,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'screens/favorites_screen.dart';
 import 'screens/map_screen.dart';
+import 'screens/post_detail_screen.dart';
 import 'screens/sns_screen.dart';
 import 'theme.dart';
+import 'widgets/nearby_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
-    appleProvider: AppleProvider.debug,
-  );
   GoogleFonts.config.allowRuntimeFetching = false;
   runApp(const MyApp());
 }
@@ -167,29 +164,56 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _openNearbyPost(Post post) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => PostDetailScreen(post: post),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        // キャプチャモード時はAR(index 3)を表示
-        index: _captureMode ? 3 : _currentIndex,
+      body: Stack(
         children: [
-          SNSScreen(
-            key: _snsKey,
-            posts: _posts,
-            userId: _userId,
-            onPostAdded: _onPostAdded,
-            onARCaptureRequested: enterCaptureMode,
-            isFavorited: _isFavorited,
-            onFavoriteToggle: _toggleFavorite,
+          IndexedStack(
+            // キャプチャモード時はAR(index 3)を表示
+            index: _captureMode ? 3 : _currentIndex,
+            children: [
+              SNSScreen(
+                key: _snsKey,
+                posts: _posts,
+                userId: _userId,
+                onPostAdded: _onPostAdded,
+                onARCaptureRequested: enterCaptureMode,
+                isFavorited: _isFavorited,
+                onFavoriteToggle: _toggleFavorite,
+              ),
+              MapScreen(key: _mapKey, posts: _posts),
+              FavoritesScreen(
+                favorites: _favorites,
+                onRemove: _toggleFavorite,
+                onNavigateToMap: _navigateToMapLocation,
+              ),
+              _buildARTab(), // index 3: キャプチャモード専用
+            ],
           ),
-          MapScreen(key: _mapKey, posts: _posts),
-          FavoritesScreen(
-            favorites: _favorites,
-            onRemove: _toggleFavorite,
-            onNavigateToMap: _navigateToMapLocation,
-          ),
-          _buildARTab(), // index 3: キャプチャモード専用
+          // 近接バナー（キャプチャモード中・ARタブ中は非表示）
+          if (!_captureMode && _currentIndex != 3)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: SafeArea(
+                top: false,
+                child: NearbyBanner(
+                  posts: _posts,
+                  onOpen: _openNearbyPost,
+                ),
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: _captureMode
@@ -216,6 +240,9 @@ class HomeScreenState extends State<HomeScreen> {
           key: _arRepaintKey,
           child: UnityARView(key: _unityKey),
         ),
+        // NOTE: 上書きモード時に既存作品をゴースト表示する案は、
+        // 端末ごとの FOV / 画面比率差で位置が一致しないため一旦無効化。
+        // 将来 ARCore Anchor で対応する想定。
         if (_captureMode) _buildCaptureOverlay() else _buildARControls(),
       ],
     );
@@ -226,7 +253,6 @@ class HomeScreenState extends State<HomeScreen> {
       _penColor = color;
       _isErasing = false;
     });
-    _unityKey.currentState?.setEraser(false);
     _unityKey.currentState?.setColor(color);
   }
 
@@ -240,34 +266,41 @@ class HomeScreenState extends State<HomeScreen> {
     _unityKey.currentState?.setWidth(size);
   }
 
-  Future<void> _openColorPicker() async {
+  Future<void> _handleColorTap(Color? preset) async {
+    if (preset != null) {
+      _setColor(preset);
+      return;
+    }
+    // カスタムカラーピッカー
     Color picked = _penColor;
     await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: kCard,
-        title: const Text('色を選ぶ', style: TextStyle(color: kWhite)),
-        content: SingleChildScrollView(
-          child: ColorPicker(
-            pickerColor: picked,
-            onColorChanged: (c) => picked = c,
-            enableAlpha: false,
-            labelTypes: const [],
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: kCard,
+          title: const Text('色を選ぶ', style: TextStyle(color: kWhite)),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              pickerColor: picked,
+              onColorChanged: (c) => setDialogState(() => picked = c),
+              enableAlpha: false,
+              labelTypes: const [],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('キャンセル', style: TextStyle(color: kGrey)),
+            ),
+            FilledButton(
+              onPressed: () {
+                _setColor(picked);
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('決定'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('キャンセル', style: TextStyle(color: kGrey)),
-          ),
-          FilledButton(
-            onPressed: () {
-              _setColor(picked);
-              Navigator.of(context).pop();
-            },
-            child: const Text('決定'),
-          ),
-        ],
       ),
     );
   }
@@ -281,7 +314,7 @@ class HomeScreenState extends State<HomeScreen> {
         penColor: _penColor,
         brushSize: _brushSize,
         isErasing: _isErasing,
-        onColorTap: _openColorPicker,
+        onColorTap: _handleColorTap,
         onEraserTap: _toggleEraser,
         onUndo: () => _unityKey.currentState?.undo(),
         onClear: () => _unityKey.currentState?.clearAll(),
@@ -329,7 +362,7 @@ class HomeScreenState extends State<HomeScreen> {
                 penColor: _penColor,
                 brushSize: _brushSize,
                 isErasing: _isErasing,
-                onColorTap: _openColorPicker,
+                onColorTap: _handleColorTap,
                 onEraserTap: _toggleEraser,
                 onUndo: () => _unityKey.currentState?.undo(),
                 onClear: () => _unityKey.currentState?.clearAll(),
@@ -367,7 +400,7 @@ class _DrawingToolbar extends StatelessWidget {
   final Color penColor;
   final double brushSize;
   final bool isErasing;
-  final VoidCallback onColorTap;
+  final void Function(Color?) onColorTap;
   final VoidCallback onEraserTap;
   final VoidCallback onUndo;
   final VoidCallback onClear;
@@ -420,26 +453,54 @@ class _DrawingToolbar extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // プリセットカラー + カスタムピッカー
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // カラーピッカー
-              GestureDetector(
-                onTap: onColorTap,
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: penColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isErasing ? Colors.white30 : Colors.white,
-                      width: isErasing ? 1.5 : 3,
+              ...[Colors.red, Colors.blue, Colors.green, Colors.yellow, Colors.white, Colors.black].map((c) {
+                final selected = !isErasing && penColor.toARGB32() == c.toARGB32();
+                return GestureDetector(
+                  onTap: () => onColorTap(c),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    decoration: BoxDecoration(
+                      color: c,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: selected ? Colors.white : Colors.white38,
+                        width: selected ? 3 : 1.5,
+                      ),
                     ),
                   ),
+                );
+              }),
+              // カスタムカラーピッカー
+              GestureDetector(
+                onTap: () => onColorTap(null),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white38, width: 1.5),
+                    gradient: const SweepGradient(colors: [
+                      Colors.red, Colors.yellow, Colors.green,
+                      Colors.cyan, Colors.blue, Colors.purple, Colors.red,
+                    ]),
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 18),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // 操作ボタン行
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               // 消しゴム
               _iconBtn(
                 icon: Icons.auto_fix_normal,

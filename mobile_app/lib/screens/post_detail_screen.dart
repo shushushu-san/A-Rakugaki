@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/post.dart';
 import '../services/post_service.dart';
 import '../theme.dart';
+import 'ar_viewer_screen.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Post post;
@@ -47,6 +48,26 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   Text(
                     post.comment,
                     style: const TextStyle(color: kWhite, fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 16),
+                  // AR ビューワーへの導線
+                  FilledButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        fullscreenDialog: true,
+                        builder: (_) => ARViewerScreen(post: post),
+                      ),
+                    ),
+                    icon: const Icon(Icons.view_in_ar),
+                    label: const Text('現地でARで見る'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: kRed,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   // 絵文字リアクション

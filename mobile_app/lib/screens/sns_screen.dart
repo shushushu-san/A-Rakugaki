@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -9,6 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../models/post.dart';
 import '../services/post_service.dart';
 import '../theme.dart';
+import '../utils/proximity.dart';
 import 'map_picker_screen.dart';
 import 'post_detail_screen.dart';
 
@@ -19,7 +19,7 @@ class SNSScreen extends StatefulWidget {
   final List<Post> posts;
   final String userId;
   final void Function(Post) onPostAdded;
-  final void Function(void Function(File?)) onARCaptureRequested;
+  final void Function(void Function(File?) onDone) onARCaptureRequested;
   final bool Function(String) isFavorited;
   final void Function(Post) onFavoriteToggle;
 
@@ -38,33 +38,39 @@ class SNSScreen extends StatefulWidget {
 }
 
 class SNSScreenState extends State<SNSScreen> {
-  Future<void> _openPostSheet({File? prefilledImage}) async {
-    final post = await showModalBottomSheet<Post>(
+  Future<void> _openPostSheet({File? prefilledImage, Post? basePost}) async {
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => _PostSheet(
         prefilledImage: prefilledImage,
-        onARCaptureTapped: (onDone) {
-          Navigator.of(context).pop(); // シートを閉じる
+        basePost: basePost,
+        userId: widget.userId,
+        existingPosts: widget.posts,
+        onARCaptureTapped: (selectedBase, onDone) {
+          Navigator.of(context).pop();
+          // ゴースト表示は端末差で位置合わせができないため一旦無効化。
+          // selectedBase は AR 終了後にシートを再オープンする際の上書きフラグ用に保持する。
           widget.onARCaptureRequested((file) {
             onDone(file);
             if (file != null) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                _openPostSheet(prefilledImage: file);
+                _openPostSheet(prefilledImage: file, basePost: selectedBase);
               });
             }
           });
         },
       ),
     );
-    if (post != null) {
-      widget.onPostAdded(post);
-    }
   }
 
   void openWithImage(File image) {
     _openPostSheet(prefilledImage: image);
+  }
+
+  void openWithImageAndBase(File image, Post basePost) {
+    _openPostSheet(prefilledImage: image, basePost: basePost);
   }
 
   @override
@@ -110,10 +116,17 @@ class SNSScreenState extends State<SNSScreen> {
 // ---------------------------------------------------------------------------
 class _PostSheet extends StatefulWidget {
   final File? prefilledImage;
-  final void Function(void Function(File?)) onARCaptureTapped;
+  final Post? basePost; // 上書き対象（既にARから戻ってきている場合）
+  final String userId;
+  final List<Post> existingPosts;
+  final void Function(Post? basePost, void Function(File?) onDone)
+      onARCaptureTapped;
 
   const _PostSheet({
     required this.prefilledImage,
+    required this.basePost,
+    required this.userId,
+    required this.existingPosts,
     required this.onARCaptureTapped,
   });
 
@@ -128,11 +141,29 @@ class _PostSheetState extends State<_PostSheet> {
 
   File? _image;
   bool _fetchingLocation = false;
+  bool _submitting = false;
+  // 近くの既存投稿（上書き候補）。位置取得後に検出される。
+  Post? _nearbyPost;
+  // 上書きモードの確定フラグ（true なら投稿時に既存を置き換える）
+  bool _overwriteMode = false;
 
   @override
   void initState() {
     super.initState();
     _image = widget.prefilledImage;
+    if (widget.basePost != null) {
+      // ARから上書きモードで戻ってきた場合
+      _nearbyPost = widget.basePost;
+      _overwriteMode = true;
+      _commentController.text = widget.basePost!.comment;
+      _setCoords(
+        widget.basePost!.location.latitude,
+        widget.basePost!.location.longitude,
+      );
+      _fetchingLocation = false;
+    } else {
+      _fetchCurrentLocation();
+    }
   }
 
   @override
@@ -143,43 +174,25 @@ class _PostSheetState extends State<_PostSheet> {
     super.dispose();
   }
 
-  void _pickImage() {
-    widget.onARCaptureTapped((file) {
+  void _pickImage({bool overwrite = false}) {
+    final base = overwrite ? _nearbyPost : null;
+    widget.onARCaptureTapped(base, (file) {
       // シートが再び開かれた時は prefilledImage で画像が渡される
     });
   }
 
-  // ---- 座標取得方法の選択ダイアログ ----
-  Future<void> _selectLocation() async {
-    final choice = await showDialog<_LocationChoice>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('座標の取得方法'),
-        content: const Text('投稿に紐づける位置を選択してください。'),
-        actions: [
-          TextButton.icon(
-            onPressed: () => Navigator.pop(ctx, _LocationChoice.current),
-            icon: const Icon(Icons.my_location),
-            label: const Text('現在地を使う'),
-          ),
-          TextButton.icon(
-            onPressed: () => Navigator.pop(ctx, _LocationChoice.map),
-            icon: const Icon(Icons.map),
-            label: const Text('マップから選ぶ'),
-          ),
-        ],
-      ),
-    );
-    if (choice == null || !mounted) return;
-
-    if (choice == _LocationChoice.current) {
-      await _fetchCurrentLocation();
-    } else {
-      await _pickFromMap();
+  /// 位置が確定したら、近くの既存投稿を探して上書き候補にする
+  void _refreshNearby() {
+    final coords = _parsedLatLng();
+    if (coords == null) {
+      setState(() => _nearbyPost = null);
+      return;
     }
+    final hit = findNearestPost(coords, widget.existingPosts);
+    setState(() => _nearbyPost = hit?.post);
   }
 
-  Future<void> _fetchCurrentLocation() async {
+Future<void> _fetchCurrentLocation() async {
     setState(() => _fetchingLocation = true);
     try {
       final pos = await Geolocator.getCurrentPosition(
@@ -212,6 +225,8 @@ class _PostSheetState extends State<_PostSheet> {
       _latController.text = lat.toStringAsFixed(6);
       _lngController.text = lng.toStringAsFixed(6);
     });
+    // 位置が確定したので近くの投稿を再検索（明示的な上書き編集中はそのまま維持）
+    if (widget.basePost == null) _refreshNearby();
   }
 
   LatLng? _parsedLatLng() {
@@ -222,7 +237,7 @@ class _PostSheetState extends State<_PostSheet> {
   }
 
   // ---- 投稿 ----
-  void _submit() {
+  Future<void> _submit() async {
     final comment = _commentController.text.trim();
     final location = _parsedLatLng();
 
@@ -239,15 +254,36 @@ class _PostSheetState extends State<_PostSheet> {
       return;
     }
 
-    Navigator.of(context).pop(
-      Post(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        comment: comment,
-        image: _image,
-        location: location,
-        createdAt: DateTime.now(),
-      ),
-    );
+    setState(() => _submitting = true);
+    try {
+      if (_overwriteMode && _nearbyPost != null) {
+        await PostService.instance.replacePost(
+          oldPost: _nearbyPost!,
+          comment: comment,
+          lat: location.latitude,
+          lng: location.longitude,
+          userId: widget.userId,
+          imageFile: _image,
+        );
+      } else {
+        await PostService.instance.createPost(
+          comment: comment,
+          lat: location.latitude,
+          lng: location.longitude,
+          userId: widget.userId,
+          imageFile: _image,
+        );
+      }
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('投稿に失敗しました: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -288,7 +324,42 @@ class _PostSheetState extends State<_PostSheet> {
             ),
             const SizedBox(height: 12),
 
-            // 画像選択（将来的にARに置き換え予定）
+            // 近くの既存投稿があれば上書きの導線を表示
+            if (_nearbyPost != null && widget.basePost == null)
+              _OverwriteHintCard(
+                post: _nearbyPost!,
+                onPickWithBase: () => _pickImage(overwrite: true),
+              ),
+            if (_nearbyPost != null && widget.basePost == null)
+              const SizedBox(height: 12),
+            // 上書きモード時のステータス表示
+            if (_overwriteMode && _nearbyPost != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: kRed.withValues(alpha: 0.15),
+                  border: Border.all(color: kRed),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.layers, size: 16, color: kRed),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        '上書きモード: 投稿時に既存の作品が置き換わります',
+                        style: TextStyle(color: kWhite, fontSize: 12),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => setState(() => _overwriteMode = false),
+                      child: const Icon(Icons.close, size: 16, color: kGrey),
+                    ),
+                  ],
+                ),
+              ),
+
+            // 画像選択
             Row(
               children: [
                 OutlinedButton.icon(
@@ -330,67 +401,61 @@ class _PostSheetState extends State<_PostSheet> {
             ),
             const SizedBox(height: 12),
 
-            // 座標入力
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _latController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[-0-9.]')),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: '緯度',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _lngController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[-0-9.]')),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: '経度',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                _fetchingLocation
-                    ? const SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: Padding(
-                          padding: EdgeInsets.all(8),
+            // 位置情報
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: kSurface,
+                border: Border.all(color: kBorder),
+              ),
+              child: Row(
+                children: [
+                  _fetchingLocation
+                      ? const SizedBox(
+                          width: 16, height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: _parsedLatLng() != null ? kRed : kGrey,
                         ),
-                      )
-                    : IconButton(
-                        onPressed: _selectLocation,
-                        icon: const Icon(Icons.my_location),
-                        tooltip: '座標を取得',
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _fetchingLocation
+                          ? '現在地を取得中...'
+                          : _parsedLatLng() != null
+                              ? '${_latController.text}, ${_lngController.text}'
+                              : '位置情報を取得できませんでした',
+                      style: TextStyle(
+                        color: _parsedLatLng() != null ? kWhite : kGrey,
+                        fontSize: 13,
                       ),
-              ],
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _fetchingLocation ? null : _pickFromMap,
+                    icon: const Icon(Icons.map, size: 16),
+                    label: const Text('変更'),
+                    style: TextButton.styleFrom(foregroundColor: kGrey),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 
             // 投稿ボタン
             FilledButton.icon(
-              onPressed: _submit,
-              icon: const Icon(Icons.send),
-              label: const Text('投稿する'),
+              onPressed: _submitting ? null : _submit,
+              icon: _submitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.send),
+              label: Text(_submitting ? '投稿中...' : '投稿する'),
             ),
           ],
         ),
@@ -398,8 +463,6 @@ class _PostSheetState extends State<_PostSheet> {
     );
   }
 }
-
-enum _LocationChoice { current, map }
 
 // ---------------------------------------------------------------------------
 // 投稿カード
@@ -529,6 +592,85 @@ class _PostCardState extends State<_PostCard> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 上書き候補が見つかったときに出るヒントカード
+// ---------------------------------------------------------------------------
+class _OverwriteHintCard extends StatelessWidget {
+  final Post post;
+  final VoidCallback onPickWithBase;
+
+  const _OverwriteHintCard({
+    required this.post,
+    required this.onPickWithBase,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: kSurface,
+        border: Border.all(color: kRed),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: post.image != null
+                      ? Image.file(post.image!, fit: BoxFit.cover)
+                      : (post.imageUrl != null
+                          ? Image.network(post.imageUrl!, fit: BoxFit.cover)
+                          : Container(color: kBorder)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'この場所には既存の作品があります',
+                      style: TextStyle(
+                        color: kWhite,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      post.comment,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: kGrey, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: onPickWithBase,
+            icon: const Icon(Icons.layers, size: 18),
+            label: const Text('上書きしてARで描く'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: kRed,
+              side: const BorderSide(color: kRed),
+            ),
+          ),
+        ],
       ),
     );
   }
