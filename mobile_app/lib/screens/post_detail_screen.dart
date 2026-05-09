@@ -1,52 +1,105 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../models/post.dart';
+import '../theme.dart';
 
-class PostDetailScreen extends StatelessWidget {
+class PostDetailScreen extends StatefulWidget {
   final Post post;
 
   const PostDetailScreen({super.key, required this.post});
 
   @override
+  State<PostDetailScreen> createState() => _PostDetailScreenState();
+}
+
+class _PostDetailScreenState extends State<PostDetailScreen> {
+  void _react(String emoji) {
+    setState(() {
+      final r = widget.post.reactions;
+      r[emoji] = (r[emoji] ?? 0) + 1;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final post = widget.post;
     return Scaffold(
+      backgroundColor: kBlack,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('投稿詳細'),
+        title: Text('DETAIL', style: GoogleFonts.bebasNeue(color: kRed, fontSize: 24, letterSpacing: 3)),
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: kWhite),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: kRed),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (post.image != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  post.image!,
-                  width: double.infinity,
-                  fit: BoxFit.contain,
-                ),
+            if (post.image != null)
+              Image.file(
+                post.image!,
+                width: double.infinity,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 16),
-            ],
-            Text(post.comment, style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  '${post.location.latitude.toStringAsFixed(5)}, '
-                  '${post.location.longitude.toStringAsFixed(5)}',
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _formatDate(post.createdAt),
-              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    post.comment,
+                    style: const TextStyle(color: kWhite, fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 16),
+                  // 絵文字リアクション
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: Post.defaultEmojis.map((emoji) {
+                      final count = post.reactions[emoji] ?? 0;
+                      return GestureDetector(
+                        onTap: () => _react(emoji),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: count > 0 ? kRed.withValues(alpha: 0.15) : kSurface,
+                            border: Border.all(color: count > 0 ? kRed : kBorder),
+                          ),
+                          child: Text(
+                            count > 0 ? '$emoji $count' : emoji,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(color: kBorder),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 14, color: kGrey),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${post.location.latitude.toStringAsFixed(5)}, '
+                        '${post.location.longitude.toStringAsFixed(5)}',
+                        style: const TextStyle(fontSize: 13, color: kGrey),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatDate(post.createdAt),
+                    style: const TextStyle(fontSize: 13, color: kGrey),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

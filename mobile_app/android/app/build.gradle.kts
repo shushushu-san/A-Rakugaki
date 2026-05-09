@@ -53,6 +53,13 @@ android {
         resources {
             excludes += "META-INF/**"
             excludes += "META-INF\\**"
+            excludes += "META-INF/MANIFEST.MF"
+            excludes += "META-INF\\MANIFEST.MF"
+            excludes += "**/MANIFEST.MF"
+            pickFirsts += "META-INF/MANIFEST.MF"
+        }
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }

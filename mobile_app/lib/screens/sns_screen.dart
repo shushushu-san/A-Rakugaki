@@ -3,10 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../models/post.dart';
+import '../theme.dart';
 import 'map_picker_screen.dart';
 import 'post_detail_screen.dart';
 
@@ -16,49 +17,86 @@ import 'post_detail_screen.dart';
 class SNSScreen extends StatefulWidget {
   final List<Post> posts;
   final void Function(Post) onPostAdded;
+  final void Function(void Function(File?)) onARCaptureRequested;
+  final bool Function(String) isFavorited;
+  final void Function(Post) onFavoriteToggle;
 
-  const SNSScreen({super.key, required this.posts, required this.onPostAdded});
+  const SNSScreen({
+    super.key,
+    required this.posts,
+    required this.onPostAdded,
+    required this.onARCaptureRequested,
+    required this.isFavorited,
+    required this.onFavoriteToggle,
+  });
 
   @override
-  State<SNSScreen> createState() => _SNSScreenState();
+  SNSScreenState createState() => SNSScreenState();
 }
 
-class _SNSScreenState extends State<SNSScreen> {
-  Future<void> _openPostSheet() async {
+class SNSScreenState extends State<SNSScreen> {
+  Future<void> _openPostSheet({File? prefilledImage}) async {
     final post = await showModalBottomSheet<Post>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => const _PostSheet(),
+      builder: (_) => _PostSheet(
+        prefilledImage: prefilledImage,
+        onARCaptureTapped: (onDone) {
+          Navigator.of(context).pop(); // シートを閉じる
+          widget.onARCaptureRequested((file) {
+            onDone(file);
+            if (file != null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _openPostSheet(prefilledImage: file);
+              });
+            }
+          });
+        },
+      ),
     );
     if (post != null) {
       widget.onPostAdded(post);
     }
   }
 
+  void openWithImage(File image) {
+    _openPostSheet(prefilledImage: image);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('SNS'),
+        title: Text('A-RAKUGAKI', style: GoogleFonts.bebasNeue(color: kRed, fontSize: 28, letterSpacing: 4)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: kRed),
+        ),
       ),
       body: widget.posts.isEmpty
-          ? const Center(
-              child: Text(
-                'まだ投稿がありません\n右下のボタンから投稿しましょう',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('EMPTY', style: GoogleFonts.bebasNeue(fontSize: 64, color: kBorder)),
+                  const SizedBox(height: 8),
+                  Text('まだ落書きがない\n右下から描け', textAlign: TextAlign.center, style: TextStyle(color: kGrey)),
+                ],
               ),
             )
           : ListView.builder(
               itemCount: widget.posts.length,
-              itemBuilder: (_, i) => _PostCard(post: widget.posts[i]),
+              itemBuilder: (_, i) => _PostCard(
+                post: widget.posts[i],
+                isFavorited: widget.isFavorited(widget.posts[i].id),
+                onFavoriteToggle: () => widget.onFavoriteToggle(widget.posts[i]),
+              ),
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _openPostSheet,
+        onPressed: () => _openPostSheet(),
         tooltip: '投稿する',
-        child: const Icon(Icons.edit),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -68,7 +106,13 @@ class _SNSScreenState extends State<SNSScreen> {
 // 投稿作成ボトムシート
 // ---------------------------------------------------------------------------
 class _PostSheet extends StatefulWidget {
-  const _PostSheet();
+  final File? prefilledImage;
+  final void Function(void Function(File?)) onARCaptureTapped;
+
+  const _PostSheet({
+    required this.prefilledImage,
+    required this.onARCaptureTapped,
+  });
 
   @override
   State<_PostSheet> createState() => _PostSheetState();
@@ -83,6 +127,12 @@ class _PostSheetState extends State<_PostSheet> {
   bool _fetchingLocation = false;
 
   @override
+  void initState() {
+    super.initState();
+    _image = widget.prefilledImage;
+  }
+
+  @override
   void dispose() {
     _commentController.dispose();
     _latController.dispose();
@@ -90,15 +140,10 @@ class _PostSheetState extends State<_PostSheet> {
     super.dispose();
   }
 
-  // ---- 画像選択 ----
-  Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-    if (picked != null) {
-      setState(() => _image = File(picked.path));
-    }
+  void _pickImage() {
+    widget.onARCaptureTapped((file) {
+      // シートが再び開かれた時は prefilledImage で画像が渡される
+    });
   }
 
   // ---- 座標取得方法の選択ダイアログ ----
@@ -245,8 +290,8 @@ class _PostSheetState extends State<_PostSheet> {
               children: [
                 OutlinedButton.icon(
                   onPressed: _pickImage,
-                  icon: const Icon(Icons.photo_library),
-                  label: const Text('画像を追加 (AR予定)'),
+                  icon: const Icon(Icons.draw),
+                  label: const Text('AR落書きを追加'),
                 ),
                 if (_image != null) ...[
                   const SizedBox(width: 8),
@@ -356,75 +401,133 @@ enum _LocationChoice { current, map }
 // ---------------------------------------------------------------------------
 // 投稿カード
 // ---------------------------------------------------------------------------
-class _PostCard extends StatelessWidget {
+class _PostCard extends StatefulWidget {
   final Post post;
+  final bool isFavorited;
+  final VoidCallback onFavoriteToggle;
 
-  const _PostCard({required this.post});
+  const _PostCard({
+    required this.post,
+    required this.isFavorited,
+    required this.onFavoriteToggle,
+  });
+
+  @override
+  State<_PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends State<_PostCard> {
+  void _react(String emoji) {
+    setState(() {
+      final r = widget.post.reactions;
+      r[emoji] = (r[emoji] ?? 0) + 1;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      clipBehavior: Clip.hardEdge,
-      child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            fullscreenDialog: true,
-            builder: (_) => PostDetailScreen(post: post),
-          ),
+    final post = widget.post;
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => PostDetailScreen(post: post),
         ),
-        child: Padding(
-        padding: const EdgeInsets.all(12),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 1),
+        decoration: const BoxDecoration(
+          color: kCard,
+          border: Border(left: BorderSide(color: kRed, width: 3)),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 画像（AR置き換え予定エリア）
-            if (post.image != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  post.image!,
-                  width: double.infinity,
-                  height: 180,
-                  fit: BoxFit.cover,
-                ),
+            // 画像
+            if (post.image != null)
+              Image.file(
+                post.image!,
+                width: double.infinity,
+                height: 220,
+                fit: BoxFit.cover,
               ),
-              const SizedBox(height: 8),
-            ],
 
-            // コメント
-            Text(post.comment, style: const TextStyle(fontSize: 15)),
-            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // コメント
+                  Text(
+                    post.comment,
+                    style: const TextStyle(
+                      color: kWhite,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
 
-            // フッター（座標・日時）
-            Row(
-              children: [
-                const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                const SizedBox(width: 2),
-                Text(
-                  '${post.location.latitude.toStringAsFixed(5)}, '
-                  '${post.location.longitude.toStringAsFixed(5)}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const Spacer(),
-                Text(
-                  _formatDate(post.createdAt),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
+                  // 絵文字リアクション
+                  Row(
+                    children: Post.defaultEmojis.map((emoji) {
+                      final count = post.reactions[emoji] ?? 0;
+                      return GestureDetector(
+                        onTap: () => _react(emoji),
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: count > 0
+                                ? kRed.withValues(alpha: 0.15)
+                                : kSurface,
+                            border: Border.all(
+                              color: count > 0 ? kRed : kBorder,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            count > 0 ? '$emoji $count' : emoji,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // フッター
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on,
+                          size: 12, color: kGrey),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${post.location.latitude.toStringAsFixed(4)}, '
+                        '${post.location.longitude.toStringAsFixed(4)}',
+                        style: const TextStyle(fontSize: 11, color: kGrey),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: widget.onFavoriteToggle,
+                        child: Icon(
+                          widget.isFavorited
+                              ? Icons.star
+                              : Icons.star_border,
+                          size: 20,
+                          color:
+                              widget.isFavorited ? kRed : kGrey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-        ),
       ),
     );
-  }
-
-  String _formatDate(DateTime dt) {
-    final m = dt.month.toString().padLeft(2, '0');
-    final d = dt.day.toString().padLeft(2, '0');
-    final h = dt.hour.toString().padLeft(2, '0');
-    final min = dt.minute.toString().padLeft(2, '0');
-    return '$m/$d $h:$min';
   }
 }

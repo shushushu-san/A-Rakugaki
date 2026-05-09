@@ -13,10 +13,12 @@ class MapScreen extends StatefulWidget {
   const MapScreen({super.key, required this.posts});
 
   @override
-  State<MapScreen> createState() => _MapScreenState();
+  State<MapScreen> createState() => MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+// publicにしてHomeScreenからカメラ操作できるようにする
+
+class MapScreenState extends State<MapScreen> {
   static const CameraPosition _tokyoPosition = CameraPosition(
     target: LatLng(35.6812, 139.7671),
     zoom: 14.0,
@@ -25,6 +27,7 @@ class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _mapController;
   bool _locationDenied = false;
   Set<Marker> _markers = {};
+  Post? _centeredPost;
 
   @override
   void initState() {
@@ -39,6 +42,10 @@ class _MapScreenState extends State<MapScreen> {
     if (oldWidget.posts.length != widget.posts.length) {
       _rebuildMarkers();
     }
+  }
+
+  void moveToLocation(LatLng target) {
+    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(target, 17.0));
   }
 
   Future<void> _initLocation() async {
@@ -172,6 +179,36 @@ class _MapScreenState extends State<MapScreen> {
     return BitmapDescriptor.bytes(byteData!.buffer.asUint8List());
   }
 
+  // ---- カメラ中心に投稿が来たか検出 ----
+
+  void _onCameraMove(CameraPosition pos) {
+    if (_centeredPost != null) {
+      setState(() => _centeredPost = null);
+    }
+  }
+
+  void _onCameraIdle() async {
+    if (_mapController == null) return;
+    final bounds = await _mapController!.getVisibleRegion();
+    final centerLat =
+        (bounds.northeast.latitude + bounds.southwest.latitude) / 2;
+    final centerLng =
+        (bounds.northeast.longitude + bounds.southwest.longitude) / 2;
+    final latRange =
+        (bounds.northeast.latitude - bounds.southwest.latitude).abs();
+
+    Post? found;
+    for (final post in widget.posts) {
+      final dLat = (post.location.latitude - centerLat).abs();
+      final dLng = (post.location.longitude - centerLng).abs();
+      if (dLat < latRange * 0.08 && dLng < latRange * 0.08) {
+        found = post;
+        break;
+      }
+    }
+    if (mounted) setState(() => _centeredPost = found);
+  }
+
   // ---- 全画面詳細表示 ----
 
   void _showPostDetail(Post post) {
@@ -187,8 +224,11 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('A-Rakugaki'),
+        title: const Text('MAP'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: const Color(0xFFD90000)),
+        ),
       ),
       body: Stack(
         children: [
@@ -199,7 +239,21 @@ class _MapScreenState extends State<MapScreen> {
             mapType: MapType.normal,
             markers: _markers,
             onMapCreated: (controller) => _mapController = controller,
+            onCameraMove: _onCameraMove,
+            onCameraIdle: _onCameraIdle,
           ),
+          // 中心の投稿画像ポップアップ
+          if (_centeredPost?.image != null)
+            Positioned(
+              top: 16,
+              left: 16,
+              right: 16,
+              child: _CenteredPostPopup(
+                post: _centeredPost!,
+                onClose: () => setState(() => _centeredPost = null),
+                onDetail: () => _showPostDetail(_centeredPost!),
+              ),
+            ),
           if (_locationDenied)
             Positioned(
               bottom: 16,
@@ -227,6 +281,73 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---- 中心投稿ポップアップ ----
+
+class _CenteredPostPopup extends StatelessWidget {
+  final Post post;
+  final VoidCallback onClose;
+  final VoidCallback onDetail;
+
+  const _CenteredPostPopup({
+    required this.post,
+    required this.onClose,
+    required this.onDetail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 8,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.hardEdge,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (post.image != null)
+            Stack(
+              children: [
+                Image.file(
+                  post.image!,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: GestureDetector(
+                    onTap: onClose,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.black54,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          InkWell(
+            onTap: onDetail,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                post.comment,
+                style: const TextStyle(fontSize: 14),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
         ],
       ),
     );
