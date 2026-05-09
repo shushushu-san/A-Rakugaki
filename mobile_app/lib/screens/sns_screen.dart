@@ -499,7 +499,11 @@ class _PostCardState extends State<_PostCard> {
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           fullscreenDialog: true,
-          builder: (_) => PostDetailScreen(post: post),
+          builder: (_) => PostDetailScreen(
+            post: post,
+            isFavorited: widget.isFavorited,
+            onFavoriteToggle: widget.onFavoriteToggle,
+          ),
         ),
       ),
       child: Container(

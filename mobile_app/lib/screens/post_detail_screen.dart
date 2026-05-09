@@ -9,14 +9,35 @@ import 'ar_viewer_screen.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Post post;
+  final bool isFavorited;
+  final VoidCallback? onFavoriteToggle;
 
-  const PostDetailScreen({super.key, required this.post});
+  const PostDetailScreen({
+    super.key,
+    required this.post,
+    this.isFavorited = false,
+    this.onFavoriteToggle,
+  });
 
   @override
   State<PostDetailScreen> createState() => _PostDetailScreenState();
 }
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
+  late bool _isFavorited;
+
+  @override
+  void initState() {
+    super.initState();
+    _isFavorited = widget.isFavorited;
+  }
+
+  void _handleFavoriteToggle() {
+    if (widget.onFavoriteToggle == null) return;
+    setState(() => _isFavorited = !_isFavorited);
+    widget.onFavoriteToggle!();
+  }
+
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
@@ -28,6 +49,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           icon: const Icon(Icons.close, color: kWhite),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          if (widget.onFavoriteToggle != null)
+            IconButton(
+              icon: Icon(
+                _isFavorited ? Icons.star : Icons.star_border,
+                color: _isFavorited ? kRed : kWhite,
+              ),
+              onPressed: _handleFavoriteToggle,
+            ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: kRed),

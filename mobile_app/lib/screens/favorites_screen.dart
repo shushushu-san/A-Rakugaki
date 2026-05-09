@@ -68,7 +68,11 @@ class _FavoriteCard extends StatelessWidget {
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           fullscreenDialog: true,
-          builder: (_) => PostDetailScreen(post: post),
+          builder: (_) => PostDetailScreen(
+            post: post,
+            isFavorited: true,
+            onFavoriteToggle: onRemove,
+          ),
         ),
       ),
       child: Card(

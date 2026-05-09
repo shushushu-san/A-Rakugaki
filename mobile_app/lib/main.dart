@@ -186,7 +186,11 @@ class HomeScreenState extends State<HomeScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => PostDetailScreen(post: post),
+        builder: (_) => PostDetailScreen(
+          post: post,
+          isFavorited: _isFavorited(post.id),
+          onFavoriteToggle: () => _toggleFavorite(post),
+        ),
       ),
     );
   }
@@ -210,7 +214,12 @@ class HomeScreenState extends State<HomeScreen> {
                 isFavorited: _isFavorited,
                 onFavoriteToggle: _toggleFavorite,
               ),
-              MapScreen(key: _mapKey, posts: _posts),
+              MapScreen(
+                key: _mapKey,
+                posts: _posts,
+                isFavorited: _isFavorited,
+                onFavoriteToggle: _toggleFavorite,
+              ),
               FavoritesScreen(
                 favorites: _favorites,
                 onRemove: _toggleFavorite,

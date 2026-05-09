@@ -10,8 +10,15 @@ import 'post_detail_screen.dart';
 
 class MapScreen extends StatefulWidget {
   final List<Post> posts;
+  final bool Function(String)? isFavorited;
+  final void Function(Post)? onFavoriteToggle;
 
-  const MapScreen({super.key, required this.posts});
+  const MapScreen({
+    super.key,
+    required this.posts,
+    this.isFavorited,
+    this.onFavoriteToggle,
+  });
 
   @override
   State<MapScreen> createState() => MapScreenState();
@@ -96,13 +103,14 @@ class MapScreenState extends State<MapScreen> {
     final String label =
         comment.length > 10 ? '${comment.substring(0, 10)}…' : comment;
 
+    const double scale = 3.0; // 高DPI対応スケール
     const double bubbleWidth = 150;
     const double radius = 10.0;
     const double padding = 10.0;
     const double tailHeight = 14.0;
     const double fontSize = 13.0;
 
-    // テキスト計測
+    // テキスト計測（論理サイズ）
     final textPainter = TextPainter(
       text: TextSpan(
         text: label,
@@ -119,11 +127,13 @@ class MapScreenState extends State<MapScreen> {
     const totalWidth = bubbleWidth;
     final totalHeight = bubbleHeight + tailHeight;
 
+    // スケールアップしたキャンバスで描画
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(
       recorder,
-      Rect.fromLTWH(0, 0, totalWidth, totalHeight),
+      Rect.fromLTWH(0, 0, totalWidth * scale, totalHeight * scale),
     );
+    canvas.scale(scale, scale);
 
     // フキダシパス（角丸矩形 + 下向き三角）
     final path = Path()
@@ -163,10 +173,15 @@ class MapScreenState extends State<MapScreen> {
     textPainter.paint(canvas, const Offset(padding, padding));
 
     final picture = recorder.endRecording();
-    final image =
-        await picture.toImage(totalWidth.ceil(), totalHeight.ceil());
+    final image = await picture.toImage(
+      (totalWidth * scale).ceil(),
+      (totalHeight * scale).ceil(),
+    );
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    return BitmapDescriptor.bytes(byteData!.buffer.asUint8List());
+    return BitmapDescriptor.bytes(
+      byteData!.buffer.asUint8List(),
+      imagePixelRatio: scale,
+    );
   }
 
   // ---- カメラ中心に投稿が来たか検出 ----
@@ -205,7 +220,13 @@ class MapScreenState extends State<MapScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => PostDetailScreen(post: post),
+        builder: (_) => PostDetailScreen(
+          post: post,
+          isFavorited: widget.isFavorited?.call(post.id) ?? false,
+          onFavoriteToggle: widget.onFavoriteToggle != null
+              ? () => widget.onFavoriteToggle!(post)
+              : null,
+        ),
       ),
     );
   }
