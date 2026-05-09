@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -9,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/post.dart';
+import '../services/post_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/reactions_bar.dart';
 import 'map_picker_screen.dart';
@@ -218,25 +217,14 @@ class _PostSheetState extends State<_PostSheet> {
 
     setState(() => _submitting = true);
     try {
-      String? imageUrl;
-      if (_image != null) {
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child('posts/${DateTime.now().millisecondsSinceEpoch}.jpg');
-        await ref.putFile(_image!);
-        imageUrl = await ref.getDownloadURL();
-      }
-
-      await FirebaseFirestore.instance.collection('posts').add({
-        'title': title,
-        'comment': comment,
-        'imageUrl': imageUrl,
-        'lat': location.latitude,
-        'lng': location.longitude,
-        'createdAt': FieldValue.serverTimestamp(),
-        'userId': widget.userId,
-        'reactions': <String, int>{},
-      });
+      await PostService.instance.createPost(
+        title: title,
+        comment: comment,
+        lat: location.latitude,
+        lng: location.longitude,
+        userId: widget.userId,
+        imageFile: _image,
+      );
 
       if (mounted) Navigator.of(context).pop();
     } catch (e) {

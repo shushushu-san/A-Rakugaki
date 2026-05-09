@@ -1,6 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
@@ -8,6 +6,8 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'firebase_options.dart';
 import 'models/post.dart';
+import 'services/auth_service.dart';
+import 'services/post_service.dart';
 import 'theme/app_colors.dart';
 import 'screens/map_screen.dart';
 import 'screens/sns_screen.dart';
@@ -105,11 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _userId;
   final Map<String, Set<String>> _myReactions = {};
 
-  late final Stream<List<Post>> _postsStream = FirebaseFirestore.instance
-      .collection('posts')
-      .orderBy('createdAt', descending: true)
-      .snapshots()
-      .map((snap) => snap.docs.map(Post.fromFirestore).toList());
+  late final Stream<List<Post>> _postsStream = PostService.instance.watchPosts();
 
   @override
   void initState() {
@@ -119,9 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _initAuth() async {
-    final user = FirebaseAuth.instance.currentUser ??
-        (await FirebaseAuth.instance.signInAnonymously()).user;
-    if (mounted) setState(() => _userId = user?.uid);
+    final uid = await AuthService.instance.signInIfNeeded();
+    if (mounted) setState(() => _userId = uid);
   }
 
   Future<void> _onReactionToggled(String postId, String emoji) async {
@@ -134,26 +129,11 @@ class _HomeScreenState extends State<HomeScreen> {
         myPostReactions.add(emoji);
       }
     });
-    final docRef =
-        FirebaseFirestore.instance.collection('posts').doc(postId);
-    await FirebaseFirestore.instance.runTransaction((tx) async {
-      final snap = await tx.get(docRef);
-      if (!snap.exists) return;
-      final data = snap.data() as Map<String, dynamic>;
-      final rxns =
-          Map<String, dynamic>.from(data['reactions'] as Map? ?? {});
-      final current = (rxns[emoji] as num?)?.toInt() ?? 0;
-      if (hasReacted) {
-        if (current <= 1) {
-          rxns.remove(emoji);
-        } else {
-          rxns[emoji] = current - 1;
-        }
-      } else {
-        rxns[emoji] = current + 1;
-      }
-      tx.update(docRef, {'reactions': rxns});
-    });
+    await PostService.instance.toggleReaction(
+      postId: postId,
+      emoji: emoji,
+      hasReacted: hasReacted,
+    );
   }
 
   @override
