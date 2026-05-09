@@ -28,12 +28,15 @@ plugins {
 
 include(":app")
 
-// Unity AR library — the actual Android module is one level inside the exported project
-val unityLibraryDir = file("unityLibrary/unityLibrary")
-if (unityLibraryDir.exists()) {
+// Unity AR library — flutter_unity_widget_2 6000.x のエクスポート構造に合わせて直下参照
+val unityLibraryDir = file("unityLibrary")
+if (unityLibraryDir.exists() && file("unityLibrary/build.gradle").exists()) {
     include(":unityLibrary")
     project(":unityLibrary").projectDir = unityLibraryDir
 
-    include(":unityLibrary:xrmanifest.androidlib")
-    project(":unityLibrary:xrmanifest.androidlib").projectDir = file("unityLibrary/unityLibrary/xrmanifest.androidlib")
+    val xrManifestDir = file("unityLibrary/xrmanifest.androidlib")
+    if (xrManifestDir.exists()) {
+        include(":unityLibrary:xrmanifest.androidlib")
+        project(":unityLibrary:xrmanifest.androidlib").projectDir = xrManifestDir
+    }
 }
