@@ -1,9 +1,8 @@
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'unity_view.dart';
@@ -60,7 +59,6 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   final _unityKey = GlobalKey<UnityARViewState>();
-  final _arRepaintKey = GlobalKey();
   final _snsKey = GlobalKey<SNSScreenState>();
   final _mapKey = GlobalKey<MapScreenState>();
 
@@ -97,6 +95,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   bool _captureMode = false;
   bool _capturing = false;
+  bool _hideOverlay = false;
   void Function(File?)? _onCaptureDone;
 
   Color _penColor = Colors.red;
@@ -155,17 +154,24 @@ class HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  static const _screenshotChannel =
+      MethodChannel('com.example.mobile_app/ar_screenshot');
+
   Future<void> _finishCapture() async {
-    setState(() => _capturing = true);
+    // オーバーレイUIを非表示にしてからキャプチャする
+    setState(() {
+      _capturing = true;
+      _hideOverlay = true;
+    });
+    await WidgetsBinding.instance.endOfFrame;
+    await Future<void>.delayed(const Duration(milliseconds: 300));
     try {
-      final boundary = _arRepaintKey.currentContext!.findRenderObject()
-          as RenderRepaintBoundary;
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
-      final bytes = byteData!.buffer.asUint8List();
+      final bytes = await _screenshotChannel
+          .invokeMethod<Uint8List>('captureWindow');
+      if (bytes == null) throw Exception('captureWindow returned null');
       final file = File(
-          '${Directory.systemTemp.path}/ar_${DateTime.now().millisecondsSinceEpoch}.png');
+        '${Directory.systemTemp.path}/ar_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
       await file.writeAsBytes(bytes);
       _onCaptureDone?.call(file);
     } catch (_) {
@@ -177,6 +183,7 @@ class HomeScreenState extends State<HomeScreen> {
           _captureMode = false;
           _currentIndex = 0;
           _onCaptureDone = null;
+          _hideOverlay = false;
         });
       }
     }
@@ -267,14 +274,12 @@ class HomeScreenState extends State<HomeScreen> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        RepaintBoundary(
-          key: _arRepaintKey,
-          child: UnityARView(key: _unityKey),
-        ),
+        UnityARView(key: _unityKey),
         // NOTE: 上書きモード時に既存作品をゴースト表示する案は、
         // 端末ごとの FOV / 画面比率差で位置が一致しないため一旦無効化。
         // 将来 ARCore Anchor で対応する想定。
-        if (_captureMode) _buildCaptureOverlay() else _buildARControls(),
+        if (!_hideOverlay)
+          _captureMode ? _buildCaptureOverlay() : _buildARControls(),
       ],
     );
   }
