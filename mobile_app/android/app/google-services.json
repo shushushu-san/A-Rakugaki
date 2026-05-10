@@ -1,40 +1,21 @@
 {
   "project_info": {
-    "project_number": "310701631490",
-    "project_id": "a-rakugaki",
-    "storage_bucket": "a-rakugaki.firebasestorage.app"
+    "project_number": "1041143292209",
+    "project_id": "arakugaki2",
+    "storage_bucket": "arakugaki2.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:310701631490:android:c39bcbe7d985d42efc5f1b",
+        "mobilesdk_app_id": "1:1041143292209:android:7e160e922317db09011010",
         "android_client_info": {
-          "package_name": "com.example.a_rakugaki"
+          "package_name": "com.example.mobile_app2"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyANvCgC5wPXpAnJadgWhdUpovMVNHDhvB8"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:310701631490:android:cbd34cc48c6423fbfc5f1b",
-        "android_client_info": {
-          "package_name": "com.example.mobile_app"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyANvCgC5wPXpAnJadgWhdUpovMVNHDhvB8"
+          "current_key": "AIzaSyB-xtsn3PCB6olvrl1ZYs5FzlqLGewlxvg"
         }
       ],
       "services": {
